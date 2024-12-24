@@ -82,7 +82,6 @@ export default function NotificationPanel({
 }: NotificationPanelProps) {
     const { selectedFilter } = useFilterStore();
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [initialLoad, setInitialLoad] = useState(true);
     const [loading, setLoading] = useState(false);
     const [intervalLoading, setIntervalLoading] = useState(false);
     const [settingsUpdateLoading, setSettingsUpdateLoading] = useState(false);
@@ -90,17 +89,18 @@ export default function NotificationPanel({
     const [tempSettings, setTempSettings] = useState<Settings>(settings);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { isOpen, setIsOpen, orderDetail, fetchOrderDetail } = useOrderDetail();
+    const [hasFetched, setHasFetched] = useState(false);
 
     // Update tempSettings when settings prop changes
     useEffect(() => {
         setTempSettings(settings);
     }, [settings]);
 
-    const fetchNotifications = useCallback(async () => {
+    const fetchNotifications = useCallback(async (isInitial = false) => {
         if (!selectedFilter.branches.length) return;
 
         try {
-            if (initialLoad) {
+            if (isInitial) {
                 setLoading(true);
             } else {
                 setIntervalLoading(true);
@@ -113,9 +113,7 @@ export default function NotificationPanel({
             });
 
             setNotifications(Array.isArray(data) ? data : []);
-            if (initialLoad) {
-                setInitialLoad(false);
-            }
+            setHasFetched(true);
         } catch (err) {
             console.error('Error fetching notifications:', err);
             setError(err instanceof Error ? err.message : 'Bilinmeyen hata');
@@ -123,57 +121,55 @@ export default function NotificationPanel({
             setLoading(false);
             setIntervalLoading(false);
         }
-    }, [initialLoad, selectedFilter.branches, settings]);
-
-    // Fetch notifications when settings change
-    useEffect(() => {
-        if (!settingsLoading) {
-            fetchNotifications();
-        }
-    }, [settings, settingsLoading, fetchNotifications]);
+    }, [selectedFilter.branches, settings]);
 
     const handleSettingsSave = useCallback(async (newSettings: Settings) => {
         try {
             setSettingsUpdateLoading(true);
             await axios.post('/api/update-user-settings', newSettings);
             onSettingsChange(newSettings);
+            
+            // Yeni settings ile notification'ları güncelle
+            const { data } = await axios.post('/api/notifications', {
+                branches: selectedFilter.branches.map(item => item.BranchID),
+                ...newSettings
+            });
+            setNotifications(Array.isArray(data) ? data : []);
+            
             setIsSettingsOpen(false);
         } catch (error) {
             console.error('Error updating settings:', error);
         } finally {
             setSettingsUpdateLoading(false);
         }
-    }, [onSettingsChange]);
+    }, [onSettingsChange, selectedFilter.branches]);
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
         const startInterval = () => {
             if (!selectedFilter.branches.length) return;
-            
-            // Clear any existing interval
-            if (intervalId) {
-                clearInterval(intervalId);
+
+            // İlk fetch sadece bir kere yapılacak
+            if (!hasFetched && !settingsLoading) {
+                fetchNotifications(true);
             }
             
-            // Set new interval
+            // Set interval for subsequent fetches
             intervalId = setInterval(() => {
-                if (document.hidden) return; // Don't fetch if page is not visible
-                fetchNotifications();
+                if (document.hidden) return;
+                fetchNotifications(false);
             }, 50000);
         };
 
-        // Only start if settings are loaded
-        if (!settingsLoading) {
-            startInterval();
-        }
+        startInterval();
 
         return () => {
             if (intervalId) {
                 clearInterval(intervalId);
             }
         };
-    }, [fetchNotifications, selectedFilter.branches, settingsLoading]);
+    }, [fetchNotifications, selectedFilter.branches, settingsLoading, hasFetched]);
 
     const renderNotification = useCallback((notification: Notification, index: number, isLastItem: boolean) => {
         const style = NOTIFICATION_STYLES[notification.type];
@@ -255,7 +251,7 @@ export default function NotificationPanel({
         );
     }, [fetchOrderDetail, loading]);
 
-    if (loading && initialLoad) {
+    if (loading && !hasFetched) {
         return (
             <div className="flex items-center justify-center h-64">
                 <PulseLoader color="#6366f1" size={18} margin={4} speedMultiplier={0.8} />
