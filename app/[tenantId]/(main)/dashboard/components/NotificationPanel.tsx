@@ -25,6 +25,12 @@ interface Settings {
     minSaleAmount: number;
 }
 
+interface NotificationPanelProps {
+    settings: Settings;
+    settingsLoading: boolean;
+    onSettingsChange: (settings: Settings) => void;
+}
+
 const DEFAULT_SETTINGS: Settings = {
     minDiscountAmount: 0,
     minCancelAmount: 0,
@@ -69,35 +75,26 @@ const formatTime = (timestamp: string) => {
     });
 };
 
-export default function NotificationPanel() {
+export default function NotificationPanel({ 
+    settings,
+    settingsLoading,
+    onSettingsChange
+}: NotificationPanelProps) {
     const { selectedFilter } = useFilterStore();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [initialLoad, setInitialLoad] = useState(true);
     const [loading, setLoading] = useState(false);
     const [intervalLoading, setIntervalLoading] = useState(false);
-    const [settingsLoading, setSettingsLoading] = useState(false);
+    const [settingsUpdateLoading, setSettingsUpdateLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-    const [tempSettings, setTempSettings] = useState<Settings>(DEFAULT_SETTINGS);
+    const [tempSettings, setTempSettings] = useState<Settings>(settings);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { isOpen, setIsOpen, orderDetail, fetchOrderDetail } = useOrderDetail();
 
-    const fetchSettings = useCallback(async () => {
-        try {
-            const { data } = await axios.get('/api/get-user-settings');
-            const newSettings = {
-                minDiscountAmount: data.minDiscountAmount ?? 0,
-                minCancelAmount: data.minCancelAmount ?? 0,
-                minSaleAmount: data.minSaleAmount ?? 0
-            };
-            setSettings(newSettings);
-            setTempSettings(newSettings);
-        } catch (error) {
-            console.error('Error fetching settings:', error);
-            setSettings(DEFAULT_SETTINGS);
-            setTempSettings(DEFAULT_SETTINGS);
-        }
-    }, []);
+    // Update tempSettings when settings prop changes
+    useEffect(() => {
+        setTempSettings(settings);
+    }, [settings]);
 
     const fetchNotifications = useCallback(async () => {
         if (!selectedFilter.branches.length) return;
@@ -128,31 +125,31 @@ export default function NotificationPanel() {
         }
     }, [initialLoad, selectedFilter.branches, settings]);
 
+    // Fetch notifications when settings change
+    useEffect(() => {
+        if (!settingsLoading) {
+            fetchNotifications();
+        }
+    }, [settings, settingsLoading, fetchNotifications]);
+
     const handleSettingsSave = useCallback(async (newSettings: Settings) => {
         try {
-            setSettingsLoading(true);
+            setSettingsUpdateLoading(true);
             await axios.post('/api/update-user-settings', newSettings);
-            setSettings(newSettings);
+            onSettingsChange(newSettings);
             setIsSettingsOpen(false);
         } catch (error) {
             console.error('Error updating settings:', error);
         } finally {
-            setSettingsLoading(false);
+            setSettingsUpdateLoading(false);
         }
-    }, []);
-
-    useEffect(() => {
-        fetchSettings();
-    }, [fetchSettings]);
+    }, [onSettingsChange]);
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
         const startInterval = () => {
             if (!selectedFilter.branches.length) return;
-            
-            // Initial fetch
-            fetchNotifications();
             
             // Clear any existing interval
             if (intervalId) {
@@ -166,15 +163,17 @@ export default function NotificationPanel() {
             }, 50000);
         };
 
-        startInterval();
+        // Only start if settings are loaded
+        if (!settingsLoading) {
+            startInterval();
+        }
 
-        // Cleanup function
         return () => {
             if (intervalId) {
                 clearInterval(intervalId);
             }
         };
-    }, [fetchNotifications, selectedFilter.branches, settings]);
+    }, [fetchNotifications, selectedFilter.branches, settingsLoading]);
 
     const renderNotification = useCallback((notification: Notification, index: number, isLastItem: boolean) => {
         const style = NOTIFICATION_STYLES[notification.type];
@@ -286,7 +285,7 @@ export default function NotificationPanel() {
                             <h2 className="text-base font-semibold">Bildirimler</h2>
                         </div>
                         <div className="flex items-center gap-2">
-                            {(intervalLoading || settingsLoading) ? (
+                            {(intervalLoading || settingsUpdateLoading) ? (
                                 <motion.div className="flex items-center gap-1">
                                     <motion.div
                                         animate={{ rotate: 360 }}
@@ -310,7 +309,7 @@ export default function NotificationPanel() {
                             settings={tempSettings} 
                             onSettingsChange={setTempSettings}
                             onSave={handleSettingsSave}
-                            loading={settingsLoading}
+                            loading={settingsUpdateLoading}
                             isOpen={isSettingsOpen}
                             onOpenChange={setIsSettingsOpen}
                         />
