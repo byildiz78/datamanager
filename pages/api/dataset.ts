@@ -18,6 +18,7 @@ interface ExecuteParams {
         BranchID?: number;
         [key: string]: string | number | undefined;
     };
+    callBackUrl?: string;
     req?: NextApiRequest;
     skipCache?: boolean
 }
@@ -97,6 +98,43 @@ export class Dataset {
                     body: {
                         query,
                         parameters,
+                        skipCache
+                    },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${database?.apiKey}`
+                    }
+                });
+            }
+            return [] as T;
+        } catch (error) {
+            console.error('executeQuery error:', error);
+            throw error;
+        }
+    }
+
+    public async executeBigQuery<T>(params: ExecuteParams): Promise<T> {
+        const { query, parameters = {}, tenantId: paramTenantId, req, skipCache, callBackUrl } = params;
+        let tenantId = paramTenantId;
+        if (params.req && req?.headers.referer) {
+            try {
+                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
+            } catch (error) {
+                console.error('Error parsing referer:', error);
+            }
+        }
+        try {
+          
+            const database = await checkTenantDatabase(tenantId || '');
+            const databaseId = database?.databaseId || params.databaseId || '3';
+
+            if(databaseId !== undefined && databaseId !== null) {
+                return this.datasetApi<T>(`/${databaseId}/bigquery`, {
+                    method: 'POST',
+                    body: {
+                        query,
+                        parameters,
+                        callBackUrl,
                         skipCache
                     },
                     headers: {
