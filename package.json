@@ -29,6 +29,7 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@supabase/supabase-js": "^2.46.1",
     "@superset-ui/embedded-sdk": "^0.1.2",
+    "@types/js-cookie": "^3.0.6",
     "@types/mssql": "^9.1.5",
     "ag-grid-charts-enterprise": "^32.3.3",
     "ag-grid-enterprise": "^32.3.3",
@@ -44,6 +45,7 @@
     "flag-icons": "^7.2.3",
     "framer-motion": "^11.14.4",
     "jose": "^5.9.6",
+    "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.460.0",
     "marked": "^15.0.3",
@@ -63,6 +65,7 @@
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.0",
     "shadcn-ui": "^0.2.3",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^4.5.2"
