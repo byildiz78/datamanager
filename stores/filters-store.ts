@@ -54,7 +54,6 @@ export const useFilterStore = create<FilterStore>((set) => ({
                 selectedBranches: []
             }
         })),
-
     addBranch: (branch: Efr_Branches) =>
         set((state) => ({
             selectedFilter: {
