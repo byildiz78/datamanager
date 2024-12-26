@@ -6,17 +6,16 @@ export default async function handler(
     res: NextApiResponse
 ) {
     try {
-        const superset = Superset.getInstance();
-        superset.setHeaders(req.headers as Headers);
-        
         const dashboardId = req.query.dashboard_id as string;
         const forceRefresh = req.query.force_refresh === 'true';
         
+        const instance = Superset.getInstance();
+
         if (!dashboardId) {
             return res.status(400).json({ error: 'Dashboard ID is required' });
         }
         
-        const guestToken = await superset.getGuestToken(dashboardId, forceRefresh);
+        const guestToken = await instance.getGuestToken(dashboardId, forceRefresh);
         return res.json({ guest_token: guestToken });
     } catch (error) {
         console.error('Error in guest token route:', error);
