@@ -238,7 +238,7 @@ export default function Dashboard() {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.5, delay: 0.3 }}
                         >
-                            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                            <h2 className="text-xl font-semibold text-foreground py-3 flex items-center gap-2 border-b border-border/60">
                                 <Store className="h-5 w-5" />
                                 Cirolar
                             </h2>
