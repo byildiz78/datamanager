@@ -73,7 +73,7 @@ const RecursiveMenuItem = ({
                                 <ReportItemWithTooltip title={item.title} icon={item.icon} />
                             </div>
                         ) : (
-                            <>
+                            <div>
                                 {item.icon && <item.icon className="h-4 w-4 flex-shrink-0" />}
                                 <TooltipProvider delayDuration={300}>
                                     <Tooltip>
@@ -92,7 +92,7 @@ const RecursiveMenuItem = ({
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
-                            </>
+                            </div>
                         )}
                     </SidebarMenuButton>
                 </div>
@@ -132,22 +132,20 @@ const RecursiveMenuItem = ({
 };
 
 export const NavMain = ({ items }: { items: NavItem[] }) => {
-    const { addTab, setActiveTab, tabs, setActiveTabFilter } = useTabStore()
+    const { addTab, setActiveTab, tabs, setTabFilter } = useTabStore()
     const {selectedFilter,setFilter} = useFilterStore();
     const [searchQuery, setSearchQuery] = useState("");
 
     const handleTabChange = (id: string, title: string, url?: string, component?: React.ComponentType<any>) => {
         const foundedTab = tabs.find(tab => tab.id === id);
         if (foundedTab) {
-            setActiveTabFilter(foundedTab.selectedFilter)
             setActiveTab(id);
         } else {
-            setActiveTabFilter(selectedFilter)
             addTab({
                 id,
                 title,
                 url,
-                selectedFilter: selectedFilter,
+                filter: selectedFilter,
                 lazyComponent: component 
                     ? async () => ({ default: component })
                     : async () => {
@@ -156,6 +154,7 @@ export const NavMain = ({ items }: { items: NavItem[] }) => {
                         return import(`@/app/[tenantId]/(main)/${cleanUrl}/page`);
                     }
             });
+            setTabFilter(id, selectedFilter);
         }
     }
 
