@@ -13,6 +13,9 @@ import { useTheme } from '@/providers/theme-provider';
 import type { SideBarDef } from 'ag-grid-community';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { useTabStore } from '@/stores/tab-store';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface ColumnDef {
   field: string;
@@ -39,10 +42,9 @@ const ReportTable = ({ report }: ReportPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const { selectedFilter } = useFilterStore();
-
-
   const { theme } = useTheme();
-  const { activeTab, activeTabFilter, setActiveTabFilter } = useTabStore()
+  const { activeTab, setTabFilter } = useTabStore();
+  const currentFilter = useTabStore.getState().getTabFilter(activeTab);
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
@@ -221,13 +223,13 @@ const ReportTable = ({ report }: ReportPageProps) => {
         await new Promise(resolve => setTimeout(resolve, 50));
         setCurrentStep(3);
 
-        const branchIds = activeTabFilter.selectedBranches.length > 0
-          ? activeTabFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
-          : activeTabFilter.branches.map((item: BranchItem) => item.BranchID);
+        const branchIds = currentFilter?.selectedBranches?.length > 0
+          ? currentFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
+          : currentFilter?.branches?.map((item: BranchItem) => item.BranchID) || [];
 
         const response = await axios.post('/api/reports-table', {
-          date1: activeTabFilter.date.from,
-          date2: activeTabFilter.date.to,
+          date1: currentFilter?.date?.from,
+          date2: currentFilter?.date?.to,
           reportId: report.ReportID,
           branches: branchIds
         });
@@ -239,10 +241,10 @@ const ReportTable = ({ report }: ReportPageProps) => {
           setRowData(response.data);
         } else {
           setRowData([]);
-          setError(`${activeTabFilter.date.from && activeTabFilter.date.to ?
-            `${new Date(activeTabFilter.date.from).toLocaleDateString('tr-TR')} - ${new Date(activeTabFilter.date.to).toLocaleDateString('tr-TR')}`
-            : 'Seçili tarih aralığı'} ve ${activeTabFilter.selectedBranches.length ?
-              `${activeTabFilter.selectedBranches.length} şube` : 'seçili şubeler'} için veri bulunamadı.`);
+          setError(`${currentFilter?.date?.from && currentFilter?.date?.to ? 
+            `${new Date(currentFilter.date.from).toLocaleDateString('tr-TR')} - ${new Date(currentFilter.date.to).toLocaleDateString('tr-TR')}` 
+            : 'Seçili tarih aralığı'} ve ${currentFilter?.selectedBranches?.length ? 
+            `${currentFilter.selectedBranches.length} şube` : 'seçili şubeler'} için veri bulunamadı.`);
         }
       } catch (error: any) {
         setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.');
@@ -253,43 +255,28 @@ const ReportTable = ({ report }: ReportPageProps) => {
     }
   };
 
-  const onGridReady = (params: any) => {
-    if (params.columnApi && columnDefs.length > 0) {
-      params.api.sizeColumnsToFit();
-    }
-  };
-
-  // Window resize event'ini dinleyelim
-  useEffect(() => {
-    const handleResize = () => {
-      if (gridRef.current && gridRef.current.api) {
-        gridRef.current.api.sizeColumnsToFit();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (report?.ReportID) {
-      fetchData();
-    }
-  }, [report?.ReportID, activeTabFilter.date.from, activeTabFilter.date.to, activeTabFilter.selectedBranches]);
-
+  // Sadece applyFilters çağrıldığında çalışacak
   useEffect(() => {
     if (activeTab === report.ReportName) {
-      setActiveTabFilter(selectedFilter);
+      setTabFilter(activeTab, selectedFilter);
+      fetchData();
     }
-  }, [selectedFilter]);
+  }, [selectedFilter.appliedAt]);
 
+  // İlk yüklemede bir kez çalışacak
+  useEffect(() => {
+    if (report?.ReportID && activeTab === report.ReportName && !currentFilter) {
+      setTabFilter(activeTab, selectedFilter);
+      fetchData();
+    }
+  }, []);
 
   return (
     <>
       {loading && <LoadingOverlay currentStep={currentStep} />}
       <div
         ref={gridContainerRef}
-        className={`ag-theme-quartz w-full h-[calc(100vh-12rem)] ${theme === 'dark' && 'ag-theme-quartz-dark'}`}
+        className={`ag-theme-quartz w-full h-[calc(100vh-12rem)] ${theme === 'dark' && 'ag-theme-quartz-dark'} flex flex-col rounded-xl border bg-card shadow-md overflow-hidden`}
         style={{
           '--ag-background-color': theme === 'dark' ? '#1a1f2e' : '#ffffff',
           '--ag-odd-row-background-color': theme === 'dark' ? '#242837' : '#ffffff',
@@ -317,7 +304,7 @@ const ReportTable = ({ report }: ReportPageProps) => {
             >
               <path d="M17.2 5H2.8a1.8 1.8 0 0 0-1.8 1.8v10.4a1.8 1.8 0 0 0 1.8 1.8h14.4a1.8 1.8 0 0 0 1.8-1.8V6.8A1.8 1.8 0 0 0 17.2 5Z" />
               <path d="M23 7v10" />
-              <path d="M12 12H2" />
+              <path d="M12 3.13a4 4 0 0 1 0 7.75" />
               <path d="M7 8v8" />
             </svg>
             <div className="text-center">
@@ -326,38 +313,67 @@ const ReportTable = ({ report }: ReportPageProps) => {
             </div>
           </div>
         ) : (
-<>
-{/* <span>Seçili Tarihler {new Date(activeTabFilter.date.from || new Date()).toLocaleDateString('tr-TR')} - {new Date(activeTabFilter.date.to || new Date()).toLocaleDateString('tr-TR')}</span> */}
-<AgGridReact
-            ref={gridRef}
-            enableCharts={true}
-            chartThemeOverrides={chartThemeOverrides}
-            popupParent={gridContainerRef.current}
-            columnDefs={columnDefs}
-            rowData={rowData}
-            defaultColDef={defaultColDef}
-            autoGroupColumnDef={autoGroupColumnDef}
-            animateRows={true}
-            sideBar={sideBar}
-            rowGroupPanelShow="always"
-            pivotPanelShow="always"
-            enableRangeSelection={true}
-            enableRangeHandle={true}
-            pagination={true}
-            paginationPageSize={100}
-            getRowClass={getRowClass}
-            groupIncludeFooter={true}
-            groupDefaultExpanded={1}
-            suppressAggFuncInHeader={true}
-            groupDisplayType="multipleColumns"
-            pinnedBottomRowData={pinnedBottomRowData}
-            onGridReady={onGridReady}
-            suppressLoadingOverlay={true}
-          />
-</>
+          <>
+            <Card className="rounded-none border-0 border-b shadow-none bg-card/40 backdrop-blur-sm">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Seçili Tarih Aralığı</span>
+                    <span className="text-sm text-muted-foreground">
+                      {useTabStore.getState().getTabFilter(useTabStore.getState().activeTab)?.date?.from 
+                        ? new Date(useTabStore.getState().getTabFilter(useTabStore.getState().activeTab).date.from).toLocaleDateString('tr-TR') 
+                        : '-'} - {useTabStore.getState().getTabFilter(useTabStore.getState().activeTab)?.date?.to 
+                        ? new Date(useTabStore.getState().getTabFilter(useTabStore.getState().activeTab).date.to).toLocaleDateString('tr-TR') 
+                        : '-'}
+                    </span>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="h-8 px-3 text-sm gap-2">
+                  <Users className="h-4 w-4" />
+                  {rowData.length.toLocaleString('tr-TR')} Kayıt
+                </Badge>
+              </CardContent>
+            </Card>
+            <div className="flex-1 p-2">
+              <AgGridReact
+                ref={gridRef}
+                enableCharts={true}
+                chartThemeOverrides={chartThemeOverrides}
+                popupParent={gridContainerRef.current}
+                columnDefs={columnDefs}
+                rowData={rowData}
+                defaultColDef={defaultColDef}
+                autoGroupColumnDef={autoGroupColumnDef}
+                animateRows={true}
+                sideBar={sideBar}
+                rowGroupPanelShow="always"
+                pivotPanelShow="always"
+                enableRangeSelection={true}
+                enableRangeHandle={true}
+                pagination={true}
+                paginationPageSize={100}
+                getRowClass={getRowClass}
+                groupIncludeFooter={true}
+                groupDefaultExpanded={1}
+                suppressAggFuncInHeader={true}
+                groupDisplayType="multipleColumns"
+                pinnedBottomRowData={pinnedBottomRowData}
+                onGridReady={() => {
+                  if (gridRef.current && gridRef.current.api) {
+                    gridRef.current.api.sizeColumnsToFit();
+                  }
+                }}
+                suppressLoadingOverlay={true}
+              />
+            </div>
+          </> 
         )}
       </div>
       <div id="myChart" className="w-full h-[400px]" />
+      <button onClick={fetchData}>Apply</button>
     </>
   );
 };
