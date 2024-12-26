@@ -12,6 +12,7 @@ import { useFilterStore } from '@/stores/filters-store';
 import { useTheme } from '@/providers/theme-provider';
 import type { SideBarDef } from 'ag-grid-community';
 import { LoadingOverlay } from '@/components/loading-overlay';
+import { useTabStore } from '@/stores/tab-store';
 
 interface ColumnDef {
   field: string;
@@ -38,7 +39,10 @@ const ReportTable = ({ report }: ReportPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const { selectedFilter } = useFilterStore();
+
+
   const { theme } = useTheme();
+  const { activeTab, activeTabFilter, setActiveTabFilter } = useTabStore()
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
@@ -123,12 +127,12 @@ const ReportTable = ({ report }: ReportPageProps) => {
 
   const formatDate = (value: any) => {
     if (!value) return '';
-    
+
     const date = new Date(value);
     if (isNaN(date.getTime())) return value; // Return original value if invalid date
-    
+
     const isLongDate = typeof value === 'string' && value.includes('T');
-    
+
     if (isLongDate) {
       return new Intl.DateTimeFormat('tr-TR', {
         day: '2-digit',
@@ -151,10 +155,10 @@ const ReportTable = ({ report }: ReportPageProps) => {
   // Alt toplam satırı için özel stil
   const pinnedBottomRowData = useMemo(() => {
     if (!rowData.length) return [];
-    
+
     const totals: any = { field: 'Genel Toplam' };
     const firstRow = rowData[0];
-    
+
     Object.keys(firstRow).forEach(key => {
       if (isNumeric(firstRow[key])) {
         totals[key] = rowData.reduce((sum, row) => {
@@ -163,14 +167,14 @@ const ReportTable = ({ report }: ReportPageProps) => {
         }, 0);
       }
     });
-    
+
     return [totals];
   }, [rowData]);
 
   const createColumnDefs = (firstRow: any) => {
     const keys = Object.keys(firstRow);
     const baseWidth = Math.max(250, Math.floor(window.innerWidth / (keys.length + 1)));
-    
+
     return keys.map(key => {
       const value = firstRow[key];
       let colDef: ColumnDef = {
@@ -204,47 +208,48 @@ const ReportTable = ({ report }: ReportPageProps) => {
   };
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // İlk üç adımı hızlıca geç
-      setCurrentStep(0);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      setCurrentStep(1);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      setCurrentStep(2);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      setCurrentStep(3);
+    if (activeTab === report.ReportName) {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const branchIds = selectedFilter.selectedBranches.length > 0
-        ? selectedFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
-        : selectedFilter.branches.map((item: BranchItem) => item.BranchID);
-      
-      const response = await axios.post('/api/reports-table', {
-        date1: selectedFilter.date.from,
-        date2: selectedFilter.date.to,
-        reportId: report.ReportID,
-        branches: branchIds
-      });
+        setCurrentStep(0);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        setCurrentStep(1);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        setCurrentStep(2);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        setCurrentStep(3);
 
-      if (response.data?.length > 0) {
-        const firstRow = response.data[0];
-        const cols = createColumnDefs(firstRow);
-        setColumnDefs(cols);
-        setRowData(response.data);
-      } else {
+        const branchIds = activeTabFilter.selectedBranches.length > 0
+          ? activeTabFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
+          : activeTabFilter.branches.map((item: BranchItem) => item.BranchID);
+
+        const response = await axios.post('/api/reports-table', {
+          date1: activeTabFilter.date.from,
+          date2: activeTabFilter.date.to,
+          reportId: report.ReportID,
+          branches: branchIds
+        });
+
+        if (response.data?.length > 0) {
+          const firstRow = response.data[0];
+          const cols = createColumnDefs(firstRow);
+          setColumnDefs(cols);
+          setRowData(response.data);
+        } else {
+          setRowData([]);
+          setError(`${activeTabFilter.date.from && activeTabFilter.date.to ?
+            `${new Date(activeTabFilter.date.from).toLocaleDateString('tr-TR')} - ${new Date(activeTabFilter.date.to).toLocaleDateString('tr-TR')}`
+            : 'Seçili tarih aralığı'} ve ${activeTabFilter.selectedBranches.length ?
+              `${activeTabFilter.selectedBranches.length} şube` : 'seçili şubeler'} için veri bulunamadı.`);
+        }
+      } catch (error: any) {
+        setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.');
         setRowData([]);
-        setError(`${selectedFilter.date.from && selectedFilter.date.to ? 
-          `${new Date(selectedFilter.date.from).toLocaleDateString('tr-TR')} - ${new Date(selectedFilter.date.to).toLocaleDateString('tr-TR')}` 
-          : 'Seçili tarih aralığı'} ve ${selectedFilter.selectedBranches.length ? 
-          `${selectedFilter.selectedBranches.length} şube` : 'seçili şubeler'} için veri bulunamadı.`);
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.');
-      setRowData([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -270,7 +275,14 @@ const ReportTable = ({ report }: ReportPageProps) => {
     if (report?.ReportID) {
       fetchData();
     }
-  }, [report?.ReportID, selectedFilter.date.from, selectedFilter.date.to, selectedFilter.selectedBranches]);
+  }, [report?.ReportID, activeTabFilter.date.from, activeTabFilter.date.to, activeTabFilter.selectedBranches]);
+
+  useEffect(() => {
+    if (activeTab === report.ReportName) {
+      setActiveTabFilter(selectedFilter);
+    }
+  }, [selectedFilter]);
+
 
   return (
     <>
@@ -314,7 +326,9 @@ const ReportTable = ({ report }: ReportPageProps) => {
             </div>
           </div>
         ) : (
-          <AgGridReact
+<>
+{/* <span>Seçili Tarihler {new Date(activeTabFilter.date.from || new Date()).toLocaleDateString('tr-TR')} - {new Date(activeTabFilter.date.to || new Date()).toLocaleDateString('tr-TR')}</span> */}
+<AgGridReact
             ref={gridRef}
             enableCharts={true}
             chartThemeOverrides={chartThemeOverrides}
@@ -340,6 +354,7 @@ const ReportTable = ({ report }: ReportPageProps) => {
             onGridReady={onGridReady}
             suppressLoadingOverlay={true}
           />
+</>
         )}
       </div>
       <div id="myChart" className="w-full h-[400px]" />

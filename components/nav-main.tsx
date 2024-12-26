@@ -7,6 +7,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useParams } from "next/navigation"
 import { useTabStore } from "@/stores/tab-store"
 import { useState, useMemo } from "react"
+import { useFilterStore } from "@/stores/filters-store"
+import { toZonedTime } from "date-fns-tz"
 
 interface NavItem {
     title: string;
@@ -130,17 +132,22 @@ const RecursiveMenuItem = ({
 };
 
 export const NavMain = ({ items }: { items: NavItem[] }) => {
-    const { addTab, setActiveTab, tabs } = useTabStore()
+    const { addTab, setActiveTab, tabs, setActiveTabFilter } = useTabStore()
+    const {selectedFilter,setFilter} = useFilterStore();
     const [searchQuery, setSearchQuery] = useState("");
 
     const handleTabChange = (id: string, title: string, url?: string, component?: React.ComponentType<any>) => {
-        if (tabs.some(tab => tab.id === id)) {
+        const foundedTab = tabs.find(tab => tab.id === id);
+        if (foundedTab) {
+            setActiveTabFilter(foundedTab.selectedFilter)
             setActiveTab(id);
         } else {
+            setActiveTabFilter(selectedFilter)
             addTab({
                 id,
                 title,
                 url,
+                selectedFilter: selectedFilter,
                 lazyComponent: component 
                     ? async () => ({ default: component })
                     : async () => {
