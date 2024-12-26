@@ -6,6 +6,7 @@ import ScaleLoader from "react-spinners/ScaleLoader";
 import * as LucideIcons from "lucide-react";
 import axios from "axios";
 import { useFilterStore } from "@/stores/filters-store";
+import { useTabStore } from '@/stores/tab-store';
 
 const REFRESH_INTERVAL = 90000;
 
@@ -72,6 +73,7 @@ const WidgetCard = memo(function WidgetCard({
     const [isUpdating, setIsUpdating] = useState(false);
     const { selectedFilter } = useFilterStore();
     const colorSet = useMemo(() => gradientColors[columnIndex % gradientColors.length], [columnIndex]);
+    const {tabs, activeTab} = useTabStore();
 
     const selectedBranches = useMemo(() => 
         selectedFilter.selectedBranches.length <= 0
@@ -81,7 +83,7 @@ const WidgetCard = memo(function WidgetCard({
     );
 
     const getReportData = useCallback(async (isInitial = false) => {
-        if (selectedBranches.length === 0) return;
+        if (selectedBranches.length === 0 && activeTab !== "dashboard") return;
         try {
             if (isInitial) {
                 setIsLoading(true);
