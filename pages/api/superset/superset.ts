@@ -28,11 +28,9 @@ export class Superset {
     private readonly GUEST_TOKEN_EXPIRY = 3600000; // 1 hour
     private readonly DATABASE_CACHE = new Map<string, CacheEntry<SuperSetDatabaseResponse>>();
     private readonly GUEST_TOKEN_CACHE = new Map<string, { token: string; expiresAt: number }>();
-    private headers?: Headers;
 
     private constructor() {
         this.baseUrl = `http://localhost:${process.env.SUPERSET_PORT}`;
-        console.log(this.baseUrl);
         this.username = process.env.SUPERSET_USERNAME || '';
         this.password = process.env.SUPERSET_PASSWORD || '';
         this.provider = process.env.SUPERSET_PROVIDER || '';
@@ -43,13 +41,6 @@ export class Superset {
             Superset.instance = new Superset();
         }
         return Superset.instance;
-    }
-
-    public setHeaders(headers: Headers) {
-        this.headers = headers;
-        const host = this.headers.get('host');
-        const protocol = this.headers.get('x-forwarded-proto') || 'http';
-        this.baseUrl = `${protocol}://${host}`;
     }
 
     private async fetchWithRetry(url: string, options: RequestInit): Promise<Response> {
@@ -130,7 +121,6 @@ export class Superset {
             }
 
             await this.createTokens();
-            console.log(this.baseUrl);
 
             const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/security/guest_token/`, {
                 method: 'POST',
