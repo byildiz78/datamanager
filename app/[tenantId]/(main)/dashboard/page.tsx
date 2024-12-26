@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import BranchList from "@/app/[tenantId]/(main)/dashboard/components/BranchList";
 import WidgetCard from "./components/WidgetCard";
+import { usePathname } from "next/navigation";
 
 const REFRESH_INTERVAL = 90000; // 90 seconds in milliseconds
 
@@ -39,12 +40,65 @@ export default function Dashboard() {
     const [settingsLoading, setSettingsLoading] = useState(true);
     const { selectedFilter } = useFilterStore();
     const { setBranchDatas } = useWidgetDataStore();
+    const pathname = usePathname();
 
-    const handleSettingsChange = useCallback((newSettings: Settings) => {
-        setSettingsLoading(true);
-        setSettings(newSettings);
-        setSettingsLoading(false);
-    }, []);
+    const fetchSettings = useCallback(async () => {
+        try {
+            setSettingsLoading(true);
+            const tenantId = pathname?.split('/')[1];
+            const userData = localStorage.getItem(`userData_${tenantId}`);
+            if (userData) {
+                const parsedData = JSON.parse(userData);
+                if (parsedData.settings) {
+                    setSettings(parsedData.settings);
+                    return;
+                }
+            }
+            const { data } = await axios.get('/api/get-user-settings');
+            const newSettings = {
+                minDiscountAmount: data.minDiscountAmount ?? 0,
+                minCancelAmount: data.minCancelAmount ?? 0,
+                minSaleAmount: data.minSaleAmount ?? 0
+            };
+            setSettings(newSettings);
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+            setSettings(DEFAULT_SETTINGS);
+        } finally {
+            setSettingsLoading(false);
+        }
+    }, [pathname]);
+
+    const handleSettingsChange = useCallback(async (newSettings: Settings) => {
+        try {
+            setSettingsLoading(true);
+            // Önce API'yi güncelle
+            await axios.post('/api/update-user-settings', newSettings);
+            
+            // Sonra state'i güncelle
+            setSettings(newSettings);
+            
+            // En son localStorage'ı güncelle
+            const tenantId = pathname?.split('/')[1];
+            if (tenantId) {
+                const userData = localStorage.getItem(`userData_${tenantId}`);
+                if (userData) {
+                    const parsedData = JSON.parse(userData);
+                    const updatedData = {
+                        ...parsedData,
+                        settings: newSettings
+                    };
+                    localStorage.setItem(`userData_${tenantId}`, JSON.stringify(updatedData));
+                }
+            }
+        } catch (error) {
+            console.error('Error updating settings:', error);
+            // Hata durumunda eski settings'e geri dön
+            await fetchSettings();
+        } finally {
+            setSettingsLoading(false);
+        }
+    }, [pathname, fetchSettings]);
 
     const fetchData = useCallback(async () => {
         const branches =
@@ -77,24 +131,6 @@ export default function Dashboard() {
             }
         }
     }, [selectedFilter.selectedBranches, selectedFilter.branches, selectedFilter.date, setBranchDatas]);
-
-    const fetchSettings = useCallback(async () => {
-        try {
-            setSettingsLoading(true);
-            const { data } = await axios.get('/api/get-user-settings');
-            const newSettings = {
-                minDiscountAmount: data.minDiscountAmount ?? 0,
-                minCancelAmount: data.minCancelAmount ?? 0,
-                minSaleAmount: data.minSaleAmount ?? 0
-            };
-            setSettings(newSettings);
-        } catch (error) {
-            console.error('Error fetching settings:', error);
-            setSettings(DEFAULT_SETTINGS);
-        } finally {
-            setSettingsLoading(false);
-        }
-    }, []);
 
     useEffect(() => {
         fetchData();
