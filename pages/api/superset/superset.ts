@@ -31,6 +31,7 @@ export class Superset {
 
     private constructor() {
         this.baseUrl = `http://localhost:${process.env.SUPERSET_PORT}`;
+        console.log(this.baseUrl);
         this.username = process.env.SUPERSET_USERNAME || '';
         this.password = process.env.SUPERSET_PASSWORD || '';
         this.provider = process.env.SUPERSET_PROVIDER || '';
@@ -121,6 +122,7 @@ export class Superset {
             }
 
             await this.createTokens();
+            console.log(this.baseUrl);
 
             const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/security/guest_token/`, {
                 method: 'POST',
