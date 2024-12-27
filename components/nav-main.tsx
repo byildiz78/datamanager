@@ -9,6 +9,8 @@ import { useTabStore } from "@/stores/tab-store"
 import { useState, useMemo } from "react"
 import { useFilterStore } from "@/stores/filters-store"
 import { toZonedTime } from "date-fns-tz"
+import { useSettingsStore } from "@/stores/settings-store"
+import { addDays } from "date-fns"
 
 interface NavItem {
     title: string;
@@ -141,11 +143,45 @@ export const NavMain = ({ items }: { items: NavItem[] }) => {
         if (foundedTab) {
             setActiveTab(id);
         } else {
+            const { settings } = useSettingsStore.getState();
+            const daystart = parseInt(settings.find(setting => setting.Kod === "daystart")?.Value || '0');
+    
+            let startTime: string;
+            let endTime: string;
+    
+            if (daystart === 0) {
+                startTime = "00:00";
+                endTime = "23:59";
+              } else {
+                const startHour = daystart.toString().padStart(2, '0');
+                startTime = `${startHour}:00`;
+                const endHour = ((daystart - 1 + 24) % 24).toString().padStart(2, '0');
+                endTime = `${endHour}:59`;
+              }
+    
+              const [startHours, startMinutes] = startTime.split(':').map(Number);
+              const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+              const defaultFilter = {
+                date: {
+                    from: toZonedTime(new Date(new Date().setHours(startHours, startMinutes, 0, 0)), 'Europe/Istanbul'),
+                    to: toZonedTime(
+                        daystart === 0 
+                            ? new Date(new Date().setHours(endHours, endMinutes, 59, 999))
+                            : addDays(new Date(new Date().setHours(endHours, endMinutes, 59, 999)), 1), 
+                        'Europe/Istanbul'
+                    )
+                },
+                branches: selectedFilter.branches,
+                selectedBranches: selectedFilter.selectedBranches,
+                appliedAt: Date.now()
+            };
+    
             addTab({
                 id,
                 title,
                 url,
-                filter: selectedFilter,
+                filter: defaultFilter,
                 lazyComponent: component 
                     ? async () => ({ default: component })
                     : async () => {
@@ -154,10 +190,11 @@ export const NavMain = ({ items }: { items: NavItem[] }) => {
                         return import(`@/app/[tenantId]/(main)/${cleanUrl}/page`);
                     }
             });
-            setTabFilter(id, selectedFilter);
+            
+            setTabFilter(id, defaultFilter);
+            setFilter(defaultFilter);
         }
     }
-
     const searchItems = (items: NavItem[], query: string): NavItem[] => {
         return items.map(item => {
             const matchesSearch = item.title.toLowerCase().includes(query.toLowerCase());
