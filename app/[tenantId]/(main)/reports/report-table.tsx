@@ -43,8 +43,8 @@ const ReportTable = ({ report }: ReportPageProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const { selectedFilter } = useFilterStore();
   const { theme } = useTheme();
-  const { activeTab, setTabFilter } = useTabStore();
-  const currentFilter = useTabStore.getState().getTabFilter(activeTab);
+  const { activeTab } = useTabStore();
+  const [currentFilter, setCurrentFilter] = useState(useTabStore.getState().getTabFilter(activeTab));
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
@@ -214,7 +214,8 @@ const ReportTable = ({ report }: ReportPageProps) => {
       try {
         setLoading(true);
         setError(null);
-
+  
+        // Loading steps
         setCurrentStep(0);
         await new Promise(resolve => setTimeout(resolve, 50));
         setCurrentStep(1);
@@ -222,14 +223,16 @@ const ReportTable = ({ report }: ReportPageProps) => {
         setCurrentStep(2);
         await new Promise(resolve => setTimeout(resolve, 50));
         setCurrentStep(3);
-
-        const branchIds = currentFilter?.selectedBranches?.length > 0
-          ? currentFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
-          : currentFilter?.branches?.map((item: BranchItem) => item.BranchID) || [];
-
+  
+        const latestFilter = useTabStore.getState().getTabFilter(activeTab);
+  
+        const branchIds = latestFilter?.selectedBranches?.length > 0
+          ? latestFilter.selectedBranches.map((item: BranchItem) => item.BranchID)
+          : latestFilter?.branches?.map((item: BranchItem) => item.BranchID) || [];
+  
         const response = await axios.post('/api/reports-table', {
-          date1: currentFilter?.date?.from,
-          date2: currentFilter?.date?.to,
+          date1: latestFilter?.date?.from,
+          date2: latestFilter?.date?.to,
           reportId: report.ReportID,
           branches: branchIds
         });
@@ -255,21 +258,32 @@ const ReportTable = ({ report }: ReportPageProps) => {
     }
   };
 
-  // Sadece applyFilters çağrıldığında çalışacak
   useEffect(() => {
-    if (activeTab === report.ReportName) {
-      setTabFilter(activeTab, selectedFilter);
-      fetchData();
-    }
-  }, [selectedFilter.appliedAt]);
+    const newFilter = useTabStore.getState().getTabFilter(activeTab) || selectedFilter;
+    setCurrentFilter(newFilter);
+  }, [activeTab, selectedFilter]);
+  
+// İlk useEffect - Sadece filtre değişikliklerini izle
+useEffect(() => {
+  if (activeTab === report.ReportName && currentFilter) {
+    fetchData();
+  }
+}, [selectedFilter.appliedAt]);
 
-  // İlk yüklemede bir kez çalışacak
-  useEffect(() => {
-    if (report?.ReportID && activeTab === report.ReportName && !currentFilter) {
-      setTabFilter(activeTab, selectedFilter);
-      fetchData();
+// Tab değişikliklerini ve ilk yüklemeyi izle
+useEffect(() => {
+  if (activeTab === report.ReportName) {
+    const newFilter = useTabStore.getState().getTabFilter(activeTab);
+    if (newFilter) {
+      setCurrentFilter(newFilter);
+      // Tab değişikliğinde otomatik fetchData yapmıyoruz
+      // Sadece ilk yüklemede yapıyoruz
+      if (!currentFilter) {
+        fetchData();
+      }
     }
-  }, []);
+  }
+}, [activeTab]);
 
   return (
     <>
@@ -327,8 +341,7 @@ const ReportTable = ({ report }: ReportPageProps) => {
                         ? new Date(useTabStore.getState().getTabFilter(useTabStore.getState().activeTab).date.from).toLocaleDateString('tr-TR') 
                         : '-'} - {useTabStore.getState().getTabFilter(useTabStore.getState().activeTab)?.date?.to 
                         ? new Date(useTabStore.getState().getTabFilter(useTabStore.getState().activeTab).date.to).toLocaleDateString('tr-TR') 
-                        : '-'}
-                    </span>
+                        : '-'}</span>
                   </div>
                 </div>
                 <Badge variant="secondary" className="h-8 px-3 text-sm gap-2">

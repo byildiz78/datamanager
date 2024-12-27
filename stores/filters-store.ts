@@ -32,7 +32,7 @@ export const useFilterStore = create<FilterStore>((set) => ({
   selectedFilter: {
     date: {
       from: toZonedTime(new Date(new Date().setHours(0, 0, 0, 0)), 'Europe/Istanbul'),
-      to: toZonedTime(addDays(new Date().setHours(23, 59, 59, 999), 1), 'Europe/Istanbul') ,
+      to: toZonedTime(addDays(new Date().setHours(23, 59, 59, 999), 1), 'Europe/Istanbul'),
     },
     branches: [],
     selectedBranches: [],
@@ -41,7 +41,6 @@ export const useFilterStore = create<FilterStore>((set) => ({
 
   setFilter: (filter: FilterState) =>
     set((state) => {
-      // Önce filters-store'u güncelle
       const newState = {
         selectedFilter: {
           ...filter,
@@ -49,7 +48,7 @@ export const useFilterStore = create<FilterStore>((set) => ({
         },
       };
 
-      // Sonra tab-store'u güncelle
+      // Tab store'u güncelle
       const activeTab = useTabStore.getState().activeTab;
       if (activeTab) {
         useTabStore.getState().setTabFilter(activeTab, newState.selectedFilter);
@@ -111,16 +110,16 @@ export const useFilterStore = create<FilterStore>((set) => ({
   handleDateRangeChange: (value: string) =>
     set((state) => {
       const today = new Date()
-      let newDateRange: DateRange = { 
-        from: today, 
+      let newDateRange: DateRange = {
+        from: today,
         to: today
       }
-      const { settings  } = useSettingsStore();
+      const { settings } = useSettingsStore();
 
       const daystart = parseInt(settings.find(setting => setting.Kod === "daystart")?.Value || '0');
       let startTime: string;
       let endTime: string;
-      
+
       if (daystart === 0) {
         startTime = "00:00";
         endTime = "23:59";
@@ -134,18 +133,18 @@ export const useFilterStore = create<FilterStore>((set) => ({
       const [startHours, startMinutes] = startTime.split(':').map(Number);
       const [endHours, endMinutes] = endTime.split(':').map(Number);
 
-      
+
       switch (value) {
         case 'today':
-          newDateRange = { 
-            from: new Date(new Date(today).setHours(startHours, startMinutes, 0)), 
+          newDateRange = {
+            from: new Date(new Date(today).setHours(startHours, startMinutes, 0)),
             to: new Date(new Date(today).setHours(startHours, startMinutes, 0))
           }
           break
         case 'yesterday':
           const yesterday = subDays(today, -1)
-          newDateRange = { 
-            from: new Date(new Date(yesterday).setHours(startHours, startMinutes, 0)), 
+          newDateRange = {
+            from: new Date(new Date(yesterday).setHours(startHours, startMinutes, 0)),
             to: new Date(today.setHours(endHours, endMinutes, 59))
           }
           break
