@@ -24,6 +24,7 @@ interface Team {
     logo: string
     plan: string
     className?: string
+    href?: string
 }
 
 export function TeamSwitcher({
@@ -73,25 +74,34 @@ export function TeamSwitcher({
                         <DropdownMenuLabel className="text-xs text-muted-foreground">
                             Modüller
                         </DropdownMenuLabel>
-                        {teams.map((team) => (
+                        {teams
+                            .filter(team => team.plan !== activeTeam.plan)
+                            .map((team) => (
                             <DropdownMenuItem
                                 key={team.name}
-                                onClick={() => setActiveTeam(team)}
                                 className="cursor-pointer gap-2 p-2"
+                                asChild
                             >
-                                <div className="flex size-6 items-center justify-center rounded-sm border">
-                                    <div className="relative h-4 w-4">
-                                        <Image
-                                            src={team.logo}
-                                            alt={team.name}
-                                            fill
-                                            className="object-contain"
-                                        />
+                                <a 
+                                    href={team.href} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center"
+                                >
+                                    <div className="flex size-6 items-center justify-center rounded-sm border">
+                                        <div className="relative h-4 w-4">
+                                            <Image
+                                                src={team.logo}
+                                                alt={team.name}
+                                                fill
+                                                className="object-contain"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex-1">
-                                    <span>{team.name}</span>
-                                </div>
+                                    <div className="flex-1">
+                                        <span>{team.plan}</span>
+                                    </div>
+                                </a>
                             </DropdownMenuItem>
                         ))}
                     </DropdownMenuContent>
