@@ -99,18 +99,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         teams: [
             {
                 name: "robotPOS Enterprise",
+                href: "/[tenantId]/(main)/dashboard",
                 logo: "/images/Data.png",
                 plan: "Data Manager",
                 className: "bg-blue-200",
             },
             {
-                name: "robotPOS Operation Manager",
+                name: "robotPOS Enterprise",
+                href: "http://localhost:3000/tavukdunyasi",
                 logo: "/images/Audit.png",
                 plan: "Operation Manager",
                 className: "bg-blue-200",
             },
             {
-                name: "robotPOS Franchise Manager",
+                name: "robotPOS Enterprise",
                 logo: "/images/Franchise.png",
                 plan: "Franchise Manager",
                 className: "bg-blue-200",
