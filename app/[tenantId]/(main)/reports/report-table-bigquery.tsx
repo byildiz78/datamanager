@@ -18,8 +18,6 @@ import { Badge } from '../../../../components/ui/badge';
 import { useParams } from 'next/navigation';
 import { useSocket } from '../../../../hooks/use-socket';
 
-const SOCKETIO_HOST = process.env.NEXT_PUBLIC_SOCKETIO_HOST || 'http://localhost';
-const SOCKETIO_PORT = process.env.NEXT_PUBLIC_SOCKETIO_PORT || '2323';
 
 interface ColumnDef {
   field: string;
