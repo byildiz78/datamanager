@@ -47,9 +47,7 @@ export default async function handler(
             parameters: {
                 reportId
             },
-            req,
-            callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/bigquery-response?tenantId=${tenantId}&userId=${userId}`,
-            socketNotification: true
+            req
         });
        
         const query = reportQueryResult[0].ReportQuery?.toString();
