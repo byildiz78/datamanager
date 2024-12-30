@@ -12,19 +12,20 @@ export default async function handler(
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    let socket;
+
     try {
+        
         const { tenantId, userId, tabId, reportId, jobId } = req.query;
 
         if (!tenantId || !userId || !jobId || !tabId || !reportId) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
-
-        // Connect to socket.io server
-        socket = io(`${SOCKETIO_HOST}:${SOCKETIO_PORT}`, {
+        let socket = io(`${SOCKETIO_HOST}:${SOCKETIO_PORT}`, {
             transports: ['websocket'],
             reconnection: false
         });
+        // Connect to socket.io server
+
 
         // Wait for socket connection
         await new Promise<void>((resolve, reject) => {
