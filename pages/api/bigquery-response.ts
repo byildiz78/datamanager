@@ -62,10 +62,5 @@ export default async function handler(
         res.status(200).json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        // Always close the socket connection
-        if (socket) {
-            socket.close();
-        }
-    }
+    } 
 }
