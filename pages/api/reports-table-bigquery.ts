@@ -58,7 +58,7 @@ export default async function handler(
         }
 
 
-        const queryResult = await instance.executeBigQuery<WebReport[]>({
+        const queryResult = await instance.executeBigQuery<any>({
             query,
             parameters: {
                 date1: date1Formatted,
@@ -66,7 +66,7 @@ export default async function handler(
                 BranchID: branches
             },
             req,
-            callBackUrl: `http://127.0.0.1:${process.env.PORT}/api/bigquery-response?tenantId=${tenantId}&userId=${userId}&tabId=${reportId}&reportId=${reportId}`
+            callBackUrl: `http://localhost:${process.env.PORT}/api/bigquery-response?tenantId=${tenantId}&userId=${userId}&tabId=${reportId}&reportId=${reportId}`
         });
 
         return res.status(200).json(queryResult);
