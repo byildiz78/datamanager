@@ -58,6 +58,5 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.NEXT_PUBLIC_SOCKETIO_PORT || 2323;
-httpServer.listen(PORT, () => {
+httpServer.listen(process.env.SOCKETIO_SERVER_PORT || 2323, () => {
 });
