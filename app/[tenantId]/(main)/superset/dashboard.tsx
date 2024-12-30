@@ -108,7 +108,6 @@ export default function SupersetDashboardComponent({ dashboardId, standalone, ex
             const attemptLoad = async (): Promise<void> => {
                 try {
                     const guestToken = await getGuestToken(dashboardId);
-                    console.log('Dashboard yüklenirken parametreler:', filterParams);
                     
                     await embedDashboard({
                         id: dashboardId,
