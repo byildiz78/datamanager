@@ -1,68 +1,70 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { io } from 'socket.io-client';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const SOCKETIO_HOST = process.env.NEXT_PUBLIC_SOCKETIO_HOST || 'http://localhost';
+const SOCKETIO_PORT = process.env.NEXT_PUBLIC_SOCKETIO_PORT || '2323';
+
+export default async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse
+) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method not allowed' });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    let socket;
     try {
-        const { tenantId, userId, jobId, tabId } = req.query;
+        const { tenantId, userId, tabId, reportId, jobId } = req.query;
 
-        // Tüm gerekli parametrelerin varlığını kontrol et
-        if (!tenantId || !userId || !jobId || !tabId) {
-            return res.status(400).json({
-                message: 'Missing required parameters: tenantId, userId, jobId, and tabId are required'
-            });
+        if (!tenantId || !userId || !jobId || !tabId || !reportId) {
+            return res.status(400).json({ error: 'Missing required parameters' });
         }
 
-        // Socket.IO sunucusuna bağlan
-        const socket = io('/socket-io');
-
-        // Bağlantı başarılı olduğunda
-        socket.on('connect', () => {
-            // Kullanıcıya özel mesajı gönder
-            socket.emit('user-notification', {
-                userId: userId,
-                message: {
-                    type: 'bigquery-response',
-                    tenantId,
-                    jobId,
-                    tabId,
-                    timestamp: new Date().toISOString()
-                }
-            });
-
-            // Mesaj gönderildikten sonra bağlantıyı kapat
-            socket.disconnect();
+        // Connect to socket.io server
+        socket = io(`${SOCKETIO_HOST}:${SOCKETIO_PORT}`, {
+            transports: ['websocket'],
+            reconnection: false
         });
 
-        // Bağlantı hatası durumu
-        socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
-            socket.disconnect();
-            return res.status(500).json({
-                message: 'Failed to connect to socket server',
-                error: error.message
+        // Wait for socket connection
+        await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Socket connection timeout'));
+            }, 5000);
+
+            socket.on('connect', () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+
+            socket.on('connect_error', (error) => {
+                clearTimeout(timeout);
+                reject(error);
             });
         });
 
-        // Başarılı yanıt dön
-        res.status(200).json({
-            message: 'Notification sent successfully',
-            data: {
-                tenantId,
-                userId,
-                jobId,
-                tabId
-            }
+        // Emit job completion event
+        socket.emit('bigquery-job-complete', {
+            tenantId: tenantId.toString(),
+            userId: userId.toString(),
+            jobId: jobId.toString(),
+            tabId: tabId.toString(),
+            reportId: reportId.toString(),
+            status: 'completed'
         });
 
+        // Wait a bit to ensure event is sent
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+
+
+        res.status(200).json({ success: true });
     } catch (error) {
-        console.error('Error in bigquery-response handler:', error);
-        res.status(500).json({
-            message: 'Internal server error',
-            error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        // Always close the socket connection
+        if (socket) {
+            socket.close();
+        }
     }
 }

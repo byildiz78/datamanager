@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import axios from "axios";
 import { checkTenantDatabase } from "../../lib/utils";
 import { NextApiRequest } from 'next';
 
@@ -11,6 +11,7 @@ interface RequestOptions {
 interface ExecuteParams {
     databaseId?: string;
     tenantId?: string;
+    jobId?: string;
     query: string;
     parameters?: {
         date1?: string;
@@ -21,6 +22,14 @@ interface ExecuteParams {
     callBackUrl?: string;
     req?: NextApiRequest;
     skipCache?: boolean
+}
+
+interface JobResultParams {
+    jobId: string;
+    page?: number;
+    tenantId?: string;
+    databaseId?: string;
+    req?: NextApiRequest;
 }
 
 interface CacheEntry<T> {
@@ -40,43 +49,28 @@ export class Dataset {
         }
         return Dataset.instance;
     }
-
     private async datasetApi<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const { method = 'GET', body, headers } = options;
-
-        const requestOptions: RequestInit = {
-            method,
-            headers,
-        };
-
-        if (body) {
-            requestOptions.body = JSON.stringify(body);
-        }
-
+        const apiUrl = `${process.env.DATASET_API_BASE_URL}${endpoint}`;
+    
         try {
-            const response = await fetch(`${process.env.DATASET_API_BASE_URL}${endpoint}`, requestOptions);
-            const responseText = await response.text();
-            let data;
-            try {
-                data = responseText ? JSON.parse(responseText) : null;
-            } catch (parseError) {
-                console.error('Response parsing error:', parseError);
-                console.error('Raw response:', responseText);
-                throw new Error('Invalid response format');
-            }
-            console.log('data:', data);
-    
-            if (!response.ok) {
-                throw new Error(data?.message || 'Request failed');
-            }
-    
-            return data.data as T;
+            const response = await axios({
+                method,
+                url: apiUrl,
+                data: body,
+                headers,
+            });
+            
+            return response.data.data as T;
         } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('API request error:', error.response?.data || error.message);
+                throw new Error(error.response?.data?.message || 'Request failed');
+            }
             console.error('API request error:', error);
             throw error;
         }
     }
-
     public async executeQuery<T>(params: ExecuteParams): Promise<T> {
         const { query, parameters = {}, tenantId: paramTenantId, req, skipCache } = params;
         let tenantId = paramTenantId;
@@ -129,7 +123,7 @@ export class Dataset {
             const databaseId = database?.databaseId || params.databaseId || '3';
 
             if(databaseId !== undefined && databaseId !== null) {
-                return this.datasetApi<T>(`/${databaseId}/bigquery`, {
+                const { method = 'GET', body, headers } = {
                     method: 'POST',
                     body: {
                         query,
@@ -141,11 +135,84 @@ export class Dataset {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${database?.apiKey}`
                     }
-                });
+                };
+                const apiUrl = `${process.env.DATASET_API_BASE_URL}/${databaseId}/bigquery`;
+                try {
+                    const response = await axios({
+                        method,
+                        url: apiUrl,
+                        data: body,
+                        headers,
+                    });
+                    
+                    return response.data as T;
+                } catch (error) {
+                    if (axios.isAxiosError(error)) {
+                        console.error('API request error:', error.response?.data || error.message);
+                        throw new Error(error.response?.data?.message || 'Request failed');
+                    }
+                    console.error('API request error:', error);
+                    throw error;
+                }
+
+
             }
             return [] as T;
         } catch (error) {
             console.error('executeQuery error:', error);
+            throw error;
+        }
+    }
+
+    public async getJobResult<T>(params: JobResultParams): Promise<T> {
+        const { jobId, tenantId: paramTenantId, req} = params;
+        let tenantId = paramTenantId;
+        if (params.req && req?.headers.referer) {
+            try {
+                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
+            } catch (error) {
+                console.error('Error parsing referer:', error);
+            }
+        }
+        try {
+            const database = await checkTenantDatabase(tenantId || '');
+            if (!database) {
+                throw new Error(`No database found for tenant: ${tenantId}`);
+            }
+            const databaseId = database?.databaseId || params.databaseId || '3';
+
+            if(databaseId !== undefined && databaseId !== null) {
+
+                const { method = 'GET', headers } = {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${database?.apiKey}`
+                    }
+                };
+                const apiUrl = `${process.env.DATASET_API_BASE_URL}/${databaseId}/job/result/${jobId}`;
+                console.log(apiUrl)
+                try {
+                    const response = await axios({
+                        method,
+                        url: apiUrl,
+                        headers,
+                    });
+                    
+                    return response.data as T;
+                } catch (error) {
+                    if (axios.isAxiosError(error)) {
+                        console.error('API request error:', error.response?.data || error.message);
+                        throw new Error(error.response?.data?.message || 'Request failed');
+                    }
+                    console.error('API request error:', error);
+                    throw error;
+                }
+
+            }
+            throw new Error('DatabaseId is undefined or null');
+        } catch (error) {
+            console.error('getJobResult error:', error);
             throw error;
         }
     }
