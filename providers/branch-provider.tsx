@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect } from "react";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { Efr_Branches } from "@/types/tables";
 import { useFilterStore } from "@/stores/filters-store";
 

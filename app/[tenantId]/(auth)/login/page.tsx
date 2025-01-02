@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +21,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
+import axios, {isAxiosError} from "@/lib/axios";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -103,7 +103,7 @@ export default function LoginPage() {
     useEffect(() => {
         // Arka plan resmini önceden yükle
         const img = document.createElement('img');
-        img.src = '/images/background/background1.jpg';
+        img.src = `${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`;
         img.onload = () => setBgImageLoaded(true);
     }, []);
 
@@ -167,7 +167,7 @@ export default function LoginPage() {
                 }
             }
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
                 setError(error.response?.data?.message || "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.");
             } else {
                 setError("Bir hata oluştu. Lütfen tekrar deneyin.");
@@ -225,19 +225,20 @@ export default function LoginPage() {
         <div
             className={cn(
                 "min-h-screen w-full flex flex-col items-center justify-between relative overflow-hidden",
-                bgImageLoaded ? "bg-[url('/images/background/background1.jpg')] dark:bg-gray-900 bg-cover bg-center bg-no-repeat" : "bg-gray-900",
+                bgImageLoaded ? `bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/background1.jpg')] dark:bg-gray-900 bg-cover bg-center bg-no-repeat` : "bg-gray-900",
                 "transition-all duration-300"
             )}
         >
             {/* Preload image */}
             <link
                 rel="preload"
-                href="/images/background/background1.jpg"
+                href={`${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`}
+
                 as="image"
                 type="image/jpeg"
             />
             {/* Noise overlay */}
-            <div className="fixed inset-0 bg-[url('/images/noise.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+            <div className={`fixed inset-0 bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
 
             {/* Dark theme overlay */}
             <div className="fixed inset-0 bg-black/5 dark:bg-black/5 pointer-events-none" />

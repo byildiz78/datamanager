@@ -9,7 +9,8 @@ import { NavUser } from "@/components/nav-user";
 import { RawReportData } from "@/types/tables";
 import { SupersetDashboard } from "@/types/tables";
 import SupersetDashboardComponent from "@/app/[tenantId]/(main)/superset/dashboard";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { getLucideIcon } from "@/lib/utils";
 import { ReportPage } from "@/app/[tenantId]/(main)/reports/page";
 import { usePathname } from "next/navigation";

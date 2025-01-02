@@ -5,7 +5,8 @@ import { AgGridReact } from 'ag-grid-react';
 import '@ag-grid-community/styles/ag-grid.css';
 import '@ag-grid-community/styles/ag-theme-quartz.css';
 import 'ag-grid-enterprise';
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { ReportPageProps } from './types';
 import { useFilterStore } from '../../../../stores/filters-store';
 import { useTheme } from '../../../../providers/theme-provider';

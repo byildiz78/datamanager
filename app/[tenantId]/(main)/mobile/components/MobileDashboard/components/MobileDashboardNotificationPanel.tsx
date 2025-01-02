@@ -21,7 +21,8 @@ import { useOrderDetail } from "@/hooks/use-orderdetail";
 import { OrderDetailDialog } from "./MobileDashboardOrderDetailDialog";
 import { useFilterStore } from "@/stores/filters-store";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 
 export default function NotificationPanel() {
     const { selectedFilter} = useFilterStore();

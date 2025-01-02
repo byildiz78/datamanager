@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useState, useCallback } from 'react';
 
 export function useReport<T = any>() {

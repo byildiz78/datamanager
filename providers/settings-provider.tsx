@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect } from "react";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useSettingsStore } from "@/stores/settings-store";
 import { ProjectSettings } from "@/types/tables";
 

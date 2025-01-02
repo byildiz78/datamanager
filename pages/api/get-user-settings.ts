@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Dataset } from '@/pages/api/dataset';
 import { jwtVerify } from 'jose';
+import { extractTenantId } from "@/lib/utils";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
@@ -51,18 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 }
 
-function extractTenantId(referer: string | undefined): string {
-    if (!referer) {
-        return '';
-    }
-    
-    try {
-        return new URL(referer).pathname.split('/')[1] || '';
-    } catch (error) {
-        console.error('Error parsing referer:', error);
-        return '';
-    }
-}
 
 async function verifyUserToken(req: NextApiRequest, tenantId: string): Promise<string | null> {
     try {

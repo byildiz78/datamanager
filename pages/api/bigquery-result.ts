@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Dataset } from '@/pages/api/dataset';
+import { extractTenantId } from '@/lib/utils';
 
 export default async function handler(
     req: NextApiRequest,
@@ -14,14 +15,7 @@ export default async function handler(
             }
 
             const instance = Dataset.getInstance();
-            let tenantId = '';
-            if (req.headers.referer) {
-                try {
-                    tenantId = new URL(req.headers.referer).pathname.split('/')[1];
-                } catch (error) {
-                    console.error('Error parsing referer:', error);
-                }
-            }
+            const tenantId = extractTenantId(req.headers.referer);
 
             const result = await instance.getJobResult<any>({
                 jobId: jobId.toString(),

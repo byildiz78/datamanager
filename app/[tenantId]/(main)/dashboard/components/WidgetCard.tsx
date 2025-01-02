@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import ScaleLoader from "react-spinners/ScaleLoader";
 import * as LucideIcons from "lucide-react";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useFilterStore } from "@/stores/filters-store";
 import { useTabStore } from '@/stores/tab-store';
 

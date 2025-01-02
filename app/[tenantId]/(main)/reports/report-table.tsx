@@ -6,7 +6,8 @@ import '@ag-grid-community/styles/ag-grid.css';
 import '@ag-grid-community/styles/ag-theme-quartz.css';
 import { themeQuartz } from '@ag-grid-community/theming';
 import 'ag-grid-enterprise';
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { ReportPageProps } from './types';
 import { useFilterStore } from '@/stores/filters-store';
 import { useTheme } from '@/providers/theme-provider';

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { DatabaseResponse } from '@/types/tables';
+import axios from '@/lib/axios';
 
 export function useDatabase(tenantId?: string) {
     const [database, setDatabase] = useState<DatabaseResponse | null>(null);
@@ -17,16 +18,15 @@ export function useDatabase(tenantId?: string) {
 
         const fetchDatabase = async () => {
             try {
-                const response = await fetch(`/api/tenant/database?tenantId=${tenantId}`);
-                const data = await response.json();
+                const response = await axios.get(`/api/tenant/database?tenantId=${tenantId}`);
 
                 if (!isMounted) return;
 
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to fetch database');
+                if (response.status !== 200) {
+                    throw new Error(response.data.message || 'Failed to fetch database');
                 }
 
-                setDatabase(data);
+                setDatabase(response.data);
                 setError(null);
             } catch (err) {
                 if (!isMounted) return;

@@ -4,6 +4,7 @@ import { embedDashboard } from "@superset-ui/embedded-sdk";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useParams } from 'next/navigation';
 import { useDatabase } from '@/hooks/use-database';
+import axios from "@/lib/axios";
 
 
 const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + process.env.NEXT_PUBLIC_SUPERSET_HOST : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
@@ -37,14 +38,13 @@ const getGuestToken = async (dashboardId: string, forceRefresh?: boolean) => {
     }
 
     try {
-        const response = await fetch(`/api/superset/guest_token?dashboard_id=${dashboardId}`);
-        const data = await response.json();
+        const response = await axios.get(`/api/superset/guest_token?dashboard_id=${dashboardId}`);
         tokenCache[dashboardId] = {
-            token: data.guest_token,
+            token: response.data.guest_token,
             expiresAt: now + (TOKEN_EXPIRY_MINUTES * 60 * 1000)
         };
 
-        return data.guest_token;
+        return response.data.guest_token;
     } catch (error) {
         console.error('Error fetching guest token:', error);
         throw error;

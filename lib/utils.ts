@@ -3,9 +3,7 @@ import { twMerge } from "tailwind-merge"
 import { DatabaseResponse } from "@/types/tables";
 import { Dataset } from "@/pages/api/dataset";
 import * as LucideIcons from "lucide-react";
-import { ComponentType } from "react";
 import { LucideIcon } from "lucide-react";
-import { useSettingsStore } from "@/stores/settings-store";
 
 interface FormatNumberOptions {
     decimals?: number;
@@ -198,5 +196,19 @@ export const formatNumberIntl = (
     } catch (error) {
         console.error('Formatlama hatası:', error);
         return value?.toString() || '';
+    }
+}
+
+export function extractTenantId(referer: string | undefined): string {
+
+    if (!referer) {
+        return '';
+    }
+    try {
+        const tenantId = new URL(referer).pathname.replace(process.env.NEXT_PUBLIC_BASEPATH ||'', '').split("/")[1] || '';
+        return tenantId;
+    } catch (error) {
+        console.error('Error parsing referer:', error);
+        return '';
     }
 }
