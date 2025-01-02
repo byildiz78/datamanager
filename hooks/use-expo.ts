@@ -1,5 +1,6 @@
 import { ExpoTokens } from '@/types/tables';
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useState } from 'react';
 
 

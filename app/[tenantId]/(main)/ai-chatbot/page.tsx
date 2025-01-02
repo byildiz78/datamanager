@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Send, Bot, Database, TrendingUp, Clock, Search } from 'lucide-react';
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
 import { useFilterStore } from '@/stores/filters-store';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
@@ -146,7 +146,7 @@ const AIChatbotPage = () => {
             console.error('Error:', error);
             let errorContent = 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.';
             
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
                 if (error.response?.status === 400) {
                     errorContent = error.response.data;
                 }

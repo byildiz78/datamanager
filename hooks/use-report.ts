@@ -1,7 +1,8 @@
 
 import { useFilterStore } from '@/stores/filters-store';
 import { useWidgetDataStore } from '@/stores/widget-data-store';
-import axios from 'axios';
+import axios, {isAxiosError} from "@/lib/axios";
+
 /*
 interface UseQueryResult<T> {
     execute: (reportId: number) => Promise<void>;

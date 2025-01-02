@@ -21,7 +21,8 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 

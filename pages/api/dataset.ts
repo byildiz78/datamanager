@@ -1,5 +1,5 @@
-import axios from "axios";
-import { checkTenantDatabase } from "../../lib/utils";
+import axios, {isAxiosError} from "@/lib/axios";
+import { checkTenantDatabase, extractTenantId } from "@/lib/utils";
 import { NextApiRequest } from 'next';
 
 interface RequestOptions {
@@ -52,7 +52,6 @@ export class Dataset {
     private async datasetApi<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const { method = 'GET', body, headers } = options;
         const apiUrl = `${process.env.DATASET_API_BASE_URL}${endpoint}`;
-    
         try {
             const response = await axios({
                 method,
@@ -63,7 +62,7 @@ export class Dataset {
             
             return response.data.data as T;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
                 console.error('API request error:', error.response?.data || error.message);
                 throw new Error(error.response?.data?.message || 'Request failed');
             }
@@ -76,7 +75,7 @@ export class Dataset {
         let tenantId = paramTenantId;
         if (params.req && req?.headers.referer) {
             try {
-                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
+                tenantId = extractTenantId(req.headers.referer);
             } catch (error) {
                 console.error('Error parsing referer:', error);
             }
@@ -112,7 +111,7 @@ export class Dataset {
         let tenantId = paramTenantId;
         if (params.req && req?.headers.referer) {
             try {
-                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
+                tenantId = extractTenantId(req.headers.referer);
             } catch (error) {
                 console.error('Error parsing referer:', error);
             }
@@ -147,7 +146,7 @@ export class Dataset {
                     
                     return response.data as T;
                 } catch (error) {
-                    if (axios.isAxiosError(error)) {
+                    if (isAxiosError(error)) {
                         console.error('API request error:', error.response?.data || error.message);
                         throw new Error(error.response?.data?.message || 'Request failed');
                     }
@@ -169,7 +168,7 @@ export class Dataset {
         let tenantId = paramTenantId;
         if (params.req && req?.headers.referer) {
             try {
-                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
+                tenantId = extractTenantId(req.headers.referer);
             } catch (error) {
                 console.error('Error parsing referer:', error);
             }
@@ -191,7 +190,6 @@ export class Dataset {
                     }
                 };
                 const apiUrl = `${process.env.DATASET_API_BASE_URL}/${databaseId}/job/result/${jobId}`;
-                console.log(apiUrl)
                 try {
                     const response = await axios({
                         method,
@@ -201,7 +199,7 @@ export class Dataset {
                     
                     return response.data as T;
                 } catch (error) {
-                    if (axios.isAxiosError(error)) {
+                    if (isAxiosError(error)) {
                         console.error('API request error:', error.response?.data || error.message);
                         throw new Error(error.response?.data?.message || 'Request failed');
                     }

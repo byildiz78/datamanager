@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, Database, TrendingUp, Clock, Search } from 'lucide-react';
-import axios from 'axios';
+
 import { useFilterStore } from '@/stores/filters-store';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';

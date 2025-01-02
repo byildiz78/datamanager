@@ -1,3 +1,4 @@
+import { extractTenantId } from '@/lib/utils';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(
@@ -8,14 +9,7 @@ export default function handler(
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    let tenantId = '';
-    if (req.headers.referer) {
-        try {
-            tenantId = new URL(req.headers.referer).pathname.split('/')[1];
-        } catch (error) {
-            console.error('Error parsing referer:', error);
-        }
-    }
+    let tenantId = extractTenantId(req.headers.referer);
 
     res.setHeader('Set-Cookie', [
         `${tenantId}_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict`,

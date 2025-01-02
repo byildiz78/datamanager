@@ -4,6 +4,7 @@ import { WebReport } from '@/types/tables';
 import { formatInTimeZone } from 'date-fns-tz';
 import { parseISO } from 'date-fns';
 import * as jose from 'jose';
+import { extractTenantId } from '@/lib/utils';
 const timeZone = 'Europe/Istanbul';
 
 export default async function handler(
@@ -14,14 +15,7 @@ export default async function handler(
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    let tenantId = '';
-    if (req.headers.referer) {
-        try {
-            tenantId = new URL(req.headers.referer).pathname.split('/')[1];
-        } catch (error) {
-            console.error('Error parsing referer:', error);
-        }
-    }
+    const tenantId = extractTenantId(req.headers.referer);
     
     try {
         const { date1, date2, reportId, branches } = req.body;

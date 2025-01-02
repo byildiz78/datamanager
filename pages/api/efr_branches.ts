@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { Dataset } from '@/pages/api/dataset';
 import { Efr_Branches } from '@/types/tables';
 import { jwtVerify } from 'jose';
+import { extractTenantId } from '@/lib/utils';
 
 
 export default async function handler(
@@ -9,21 +10,17 @@ export default async function handler(
     res: NextApiResponse
 ) {
     try {
-        let tenantId = '';
-        if (req.headers.referer) {
-            try {
-                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
-            } catch (error) {
-                console.error('Error parsing referer:', error);
-            }
-        }
+
+        const tenantId = extractTenantId(req.headers.referer);
         const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 
         const cookies = req.headers.cookie?.split(';').reduce((acc: { [key: string]: string }, cookie) => {
             const [key, value] = cookie.trim().split('=');
-            acc[key] = value;
+            if (key && value) {
+                acc[key.trim()] = decodeURIComponent(value.trim());
+            }
             return acc;
-        }, {});
+        }, {}) || {};
 
         if (cookies) {
             const accessToken = cookies[`${tenantId}_access_token`];

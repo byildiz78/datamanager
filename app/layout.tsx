@@ -22,6 +22,11 @@ export const metadata: Metadata = {
         'apple-mobile-web-app-status-bar-style': 'default',
         'format-detection': 'telephone=no',
     },
+    icons: {
+        icon: `${process.env.NEXT_PUBLIC_BASEPATH}/favicon.ico`,
+        shortcut: `${process.env.NEXT_PUBLIC_BASEPATH}/favicon.ico`,
+        apple: `${process.env.NEXT_PUBLIC_BASEPATH}/favicon.ico`,
+    },
 };
 
 export default function RootLayout({

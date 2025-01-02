@@ -23,7 +23,8 @@ import { OrderDetailDialog } from "@/app/[tenantId]/(main)/dashboard/components/
 import { Card } from "@/components/ui/card";
 import { useFilterStore } from "@/stores/filters-store";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
+
 import { useExpo } from "@/hooks/use-expo";
 
 interface MobileNotificationsProps {

@@ -22,11 +22,13 @@ export const config = {
 
 
 function getTenantId(request: NextRequest): string {
-    if (request.nextUrl.pathname.includes("/api/")) {
+    const pathname = request.nextUrl.pathname.replace(process.env.NEXT_PUBLIC_BASEPATH ||'', '');
+
+    if (pathname.includes("/api/")) {
         const referrer = request.headers.get('referer') || '';
         return referrer.split('/')[3] || '';
     }
-    return request.nextUrl.pathname.split('/')[1] || '';
+    return pathname.split('/')[1] || '';
 }
 
 async function verifyToken(token: string, secret: Uint8Array, options: any): Promise<boolean> {
@@ -58,29 +60,30 @@ async function createNewAccessToken(username: string | unknown, userId: string |
 }
 
 export async function middleware(request: NextRequest) {
+    const pathname = request.nextUrl.pathname.replace(process.env.NEXT_PUBLIC_BASEPATH ||'', '');
     const tenantId = getTenantId(request);
-    const isApiRoute = request.nextUrl.pathname.includes("/api/");
-    const isLoginRoute = request.nextUrl.pathname.includes("login");
-    const isNotFoundRoute = request.nextUrl.pathname.includes("notfound");
+    const isApiRoute = pathname.includes("/api/");
+    const isLoginRoute = pathname.includes("login");
+    const isNotFoundRoute = pathname.includes("notfound");
 
     if (isNotFoundRoute) {
         if (tenantId && !isApiRoute) {
             const database = await checkTenantDatabase(tenantId);
             if (database !== undefined) {
-                return NextResponse.redirect(new URL(`/${tenantId}/login`, request.url));
+                return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}/login`, request.url));
             }
         }
         return NextResponse.next();
     }
 
     if (!tenantId && !isApiRoute) {
-        return NextResponse.redirect(new URL('/notfound', request.url));
+        return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/notfound`, request.url));
     }
 
     if (!isApiRoute && !tenantId.includes("api")) {
         const database = await checkTenantDatabase(tenantId);
         if (database === undefined) {
-            return NextResponse.redirect(new URL(`/${tenantId}/notfound`, request.url));
+            return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}/notfound`, request.url));
         }
     }
 
@@ -92,7 +95,7 @@ export async function middleware(request: NextRequest) {
         if (isLoginRoute || isApiRoute) {
             return NextResponse.next();
         }
-        const response = NextResponse.redirect(new URL(`/${tenantId}/login`, request.url));
+        const response = NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}/login`, request.url));
         response.cookies.set(`${tenantId}_access_token`, '', { maxAge: 0 });
         response.cookies.set(`${tenantId}_refresh_token`, '', { maxAge: 0 });
         return response;
@@ -108,7 +111,7 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!isValidRefresh) {
-        const response = NextResponse.redirect(new URL(`/${tenantId}/login`, request.url));
+        const response = NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}/login`, request.url));
         response.cookies.set(`${tenantId}_access_token`, '', { maxAge: 0 });
         response.cookies.set(`${tenantId}_refresh_token`, '', { maxAge: 0 });
         return response;
@@ -122,7 +125,7 @@ export async function middleware(request: NextRequest) {
     if (!isValidAccess) {
         const decodedToken = decodeJwt(refreshToken);
         if (!decodedToken) {
-            return NextResponse.redirect(new URL(`/${tenantId}/login`, request.url));
+            return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}/login`, request.url));
         }
         const newAccessToken = await createNewAccessToken(decodedToken.username, decodedToken.userId, tenantId);
         const response = NextResponse.next();
@@ -138,7 +141,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isLoginRoute) {
-        return NextResponse.redirect(new URL(`/${tenantId}`, request.url));
+        return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASEPATH}/${tenantId}`, request.url));
     }
 
     return NextResponse.next();

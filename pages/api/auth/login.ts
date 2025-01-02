@@ -3,6 +3,7 @@ import { serialize } from 'cookie';
 import { SignJWT } from 'jose';
 import crypto from 'crypto';
 import { Dataset } from '@/pages/api/dataset';
+import { extractTenantId } from '@/lib/utils';
 
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 const REFRESH_TOKEN_SECRET = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET);
@@ -46,14 +47,7 @@ export default async function handler(
 
     try {
         // Get tenant ID from request headers or URL
-        let tenantId = '';
-        if (req.headers.referer) {
-            try {
-                tenantId = new URL(req.headers.referer).pathname.split('/')[1];
-            } catch (error) {
-                console.error('Error parsing referer:', error);
-            }
-        }
+        const tenantId = extractTenantId(req.headers.referer);
         const { username, password } = req.body;
         const encryptedpass = encrypt(password);
         const instance = Dataset.getInstance();
@@ -68,6 +62,7 @@ export default async function handler(
             },
             req
         });
+
         const user = response[0]
         if (user) {
             let tokenPayload = {

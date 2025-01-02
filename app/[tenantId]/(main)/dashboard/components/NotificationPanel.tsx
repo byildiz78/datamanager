@@ -8,7 +8,7 @@ import { useOrderDetail } from "@/hooks/use-orderdetail";
 import { OrderDetailDialog } from "./OrderDetailDialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFilterStore } from "@/stores/filters-store";
-import axios from "axios";
+import axios, {isAxiosError} from "@/lib/axios";
 import { SettingsMenu } from "@/components/notifications/settings-menu";
 
 interface NotificationStyle {
