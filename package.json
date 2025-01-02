@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev",
     "copy-files": "node scripts/copy-files.js",
     "build": "next build && npm run copy-files",
     "start": "node server.js",
