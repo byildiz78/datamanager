@@ -53,10 +53,10 @@ io.on('connection', (socket) => {
 
     // Debug: Log all events
     socket.onAny((eventName, ...args) => {
-        if (eventName !== 'bigquery-job-complete') {
-        }
+        console.log(`[Socket.IO Event] ${eventName}:`, args);
     });
 });
 
 httpServer.listen(process.env.SOCKETIO_SERVER_PORT || 2323, () => {
+    console.log(`Socket.IO server running on port ${process.env.SOCKETIO_SERVER_PORT || 2323}`);
 });
