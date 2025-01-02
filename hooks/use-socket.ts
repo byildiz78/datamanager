@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useParams } from 'next/navigation';
 
-const SOCKETIO_HOST =   'http://localhost';
+const SOCKETIO_HOST =   process.env.NEXT_PUBLIC_SOCKETIO_SERVER_HOST || 'http://localhost';
 const SOCKETIO_PORT = process.env.NEXT_PUBLIC_SOCKETIO_SERVER_PORT || '2323';
 
 export const useSocket = () => {
