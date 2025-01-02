@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { io } from 'socket.io-client';
 
-const SOCKETIO_HOST = process.env.NEXT_PUBLIC_SOCKETIO_HOST || 'http://localhost';
-const SOCKETIO_PORT = process.env.NEXT_PUBLIC_SOCKETIO_PORT || '2323';
+const SOCKETIO_HOST = process.env.SOCKETIO_SERVER_HOST || 'http://localhost';
+const SOCKETIO_PORT = process.env.SOCKETIO_SERVER_PORT || '2323';
 
 export default async function handler(
     req: NextApiRequest,
@@ -22,7 +22,11 @@ export default async function handler(
         }
         let socket = io(`${SOCKETIO_HOST}:${SOCKETIO_PORT}`, {
             transports: ['websocket'],
-            reconnection: false
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            timeout: 5000,
+            query: { tenantId }
         });
         // Connect to socket.io server
 
