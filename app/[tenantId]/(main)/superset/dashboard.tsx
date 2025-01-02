@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { useDatabase } from '@/hooks/use-database';
 
 
-const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + window.location.hostname : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
+const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + process.env.NEXT_PUBLIC_SUPERSET_HOST : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
 const tokenCache: Record<string, TokenCache> = {};
 const TOKEN_EXPIRY_MINUTES = 50;
 
