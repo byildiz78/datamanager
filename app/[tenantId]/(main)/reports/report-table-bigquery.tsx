@@ -325,11 +325,13 @@ const ReportTableBigQuery = ({ report, reportGroup }: ReportPageProps) => {
     }
 
     const handleBigQueryComplete = (data: any) => {
+      console.log(data);
+      console.log(report.ReportID);
       if (data.reportId === report.ReportID.toString() || data.tabId === report.ReportID.toString()) {
         handleUserNotification(data);
       }
     };
-
+    console.log("fdslşkaasdlkfjsadşlkfjasldşkjfsdş")
     socket.on('bigquery-job-complete', handleBigQueryComplete);
 
     return () => {

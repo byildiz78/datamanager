@@ -60,7 +60,7 @@ export default async function handler(
                 BranchID: branches
             },
             req,
-            callBackUrl: `http://localhost:${process.env.PORT}/api/bigquery-response?tenantId=${tenantId}&userId=${userId}&tabId=${reportId}&reportId=${reportId}`
+            callBackUrl: `http://localhost:${process.env.PORT}${process.env.NEXT_PUBLIC_BASEPATH}/api/bigquery-response?tenantId=${tenantId}&userId=${userId}&tabId=${reportId}&reportId=${reportId}`
         });
 
         return res.status(200).json(queryResult);
