@@ -82,7 +82,7 @@ export default async function handler(
                 .setIssuedAt(currentTimestamp)
                 .sign(ACCESS_TOKEN_SECRET);
             const accessTokenCookie = serialize(`${tenantId}_access_token`, accessToken, {
-                httpOnly: true,
+                httpOnly: false,
                 //secure: NODE_ENV === 'production',
                 //sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
                 path: '/',
@@ -97,7 +97,7 @@ export default async function handler(
                 .setIssuedAt(currentTimestamp)
                 .sign(REFRESH_TOKEN_SECRET);
             const refreshTokenCookie = serialize(`${tenantId}_refresh_token`, refreshToken, {
-                httpOnly: true,
+                httpOnly: false,
                 //secure: NODE_ENV === 'production',
                 //sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
                 path: '/',

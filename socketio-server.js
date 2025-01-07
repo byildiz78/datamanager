@@ -14,40 +14,58 @@ const io = new Server(httpServer, {
     }
 });
 
-// Store tenant socket mappings
+// Kullanıcı ve tenant socket eşleşmelerini saklamak için Map'ler
 const tenantSockets = new Map();
-
-
+const userSockets = new Map();
 
 // Connection event handler
 io.on('connection', (socket) => {
     const tenantId = socket.handshake.query.tenantId;
     
     if (tenantId) {
-        tenantSockets.set(tenantId, socket.id);
+        // Eğer bu tenant için bir array yoksa oluştur
+        if (!tenantSockets.has(tenantId)) {
+            tenantSockets.set(tenantId, new Set());
+        }
+        tenantSockets.get(tenantId).add(socket.id);
         socket.tenantId = tenantId;
     }
 
     // Handle user login
     socket.on('user-login', (userId) => {
-        socket.userId = userId;
-        socket.emit('login-success', { userId });
+        const userIdStr = userId.toString();
+        userSockets.set(userIdStr, socket.id);
+        console.log(`User ${userIdStr} connected with socket ${socket.id}`);
+        // Debug için Map içeriğini göster
+        console.log('Updated userSockets map:', Array.from(userSockets.entries()));
     });
 
-    // Handle client disconnection
-    socket.on('disconnect', () => {
-        if (socket.tenantId) {
-            tenantSockets.delete(socket.tenantId);
+    // BigQuery job tamamlandığında
+    socket.on('bigquery-job-complete', (data) => {
+        const { userId, message } = data;
+        const targetSocketId = userSockets.get(userId.toString()); // userId'yi string'e çevir
+
+        console.log('Received bigquery-job-complete for user:', userId);
+        console.log('Target socket id:', targetSocketId);
+        console.log('Current userSockets map:', userSockets);
+
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('bigquery-job-complete', message);
+            console.log(`Message sent to user ${userId} via socket ${targetSocketId}`);
+        } else {
+            console.log(`User ${userId} not found or not connected`);
         }
     });
 
-    // Handle bigquery-job-complete event
-    socket.on('bigquery-job-complete', (data) => {
-        const { tenantId } = data;
-        const targetSocketId = tenantSockets.get(tenantId);
-
-        if (targetSocketId) {
-            io.to(targetSocketId).emit('bigquery-job-complete', data);
+    // Bağlantı koptuğunda
+    socket.on('disconnect', () => {
+        // Kullanıcıyı userSockets map'inden kaldır
+        for (const [userId, socketId] of userSockets.entries()) {
+            if (socketId === socket.id) {
+                userSockets.delete(userId);
+                console.log(`User ${userId} disconnected`);
+                break;
+            }
         }
     });
 
