@@ -21,7 +21,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
-import axios, { isAxiosError } from "@/lib/axios";
+import axios, {isAxiosError} from "@/lib/axios";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -41,6 +41,7 @@ export default function LoginPage() {
     const [shake, setShake] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [bgImageLoaded, setBgImageLoaded] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -99,7 +100,12 @@ export default function LoginPage() {
         return () => window.removeEventListener('message', handleExpoToken);
     }, []);
 
-
+    useEffect(() => {
+        // Arka plan resmini önceden yükle
+        const img = document.createElement('img');
+        img.src = `${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`;
+        img.onload = () => setBgImageLoaded(true);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -216,26 +222,23 @@ export default function LoginPage() {
     ];
 
     return (
-
-        <div className="min-h-screen w-full flex flex-col items-center justify-between relative overflow-hidden">
-            <Image
-                src={`${process.env.PROJECT_BASEPATH ?? ''}/images/background/background1.jpg`}
-                alt="Background"
-                fill
-                priority
-                className="object-cover z-0"
-                quality={100}
-            />
+        <div
+            className={cn(
+                "min-h-screen w-full flex flex-col items-center justify-between relative overflow-hidden",
+                bgImageLoaded ? `bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/background1.jpg')] dark:bg-gray-900 bg-cover bg-center bg-no-repeat` : "bg-gray-900",
+                "transition-all duration-300"
+            )}
+        >
             {/* Preload image */}
             <link
                 rel="preload"
-                href={`${process.env.PROJECT_BASEPATH}/images/background/background1.jpg`}
+                href={`${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`}
 
                 as="image"
                 type="image/jpeg"
             />
             {/* Noise overlay */}
-            <div className={`fixed inset-0 bg-[url('${process.env.PROJECT_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
+            <div className={`fixed inset-0 bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
 
             {/* Dark theme overlay */}
             <div className="fixed inset-0 bg-black/5 dark:bg-black/5 pointer-events-none" />
@@ -552,6 +555,5 @@ export default function LoginPage() {
                 </motion.div>
             </div>
         </div>
-
     );
 }
