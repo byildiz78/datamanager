@@ -219,7 +219,7 @@ export default function LoginPage() {
 
         <div className="min-h-screen w-full flex flex-col items-center justify-between relative overflow-hidden">
             <Image
-                src={`${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/background1.jpg`}
+                src={`${process.env.PROJECT_BASEPATH ?? ''}/images/background/background1.jpg`}
                 alt="Background"
                 fill
                 priority
@@ -229,13 +229,13 @@ export default function LoginPage() {
             {/* Preload image */}
             <link
                 rel="preload"
-                href={`${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`}
+                href={`${process.env.PROJECT_BASEPATH}/images/background/background1.jpg`}
 
                 as="image"
                 type="image/jpeg"
             />
             {/* Noise overlay */}
-            <div className={`fixed inset-0 bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
+            <div className={`fixed inset-0 bg-[url('${process.env.PROJECT_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
 
             {/* Dark theme overlay */}
             <div className="fixed inset-0 bg-black/5 dark:bg-black/5 pointer-events-none" />
