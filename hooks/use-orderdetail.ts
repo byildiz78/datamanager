@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { OrderDetail } from '@/types/tables';
+import axios from "@/lib/axios";
 
 export function useOrderDetail() {
     const [isOpen, setIsOpen] = useState(false);
@@ -14,11 +15,10 @@ export function useOrderDetail() {
         setOrderDetail(null);
 
         try {
-            const response = await fetch(`/api/order-detail?orderKey=${orderKey}`);
-            if (!response.ok) throw new Error('Sipariş detayı alınamadı');
+            const response = await axios.get(`/api/order-detail?orderKey=${orderKey}`);
+            if (!response.status || response.status !== 200) throw new Error('Sipariş detayı alınamadı');
 
-            const data = await response.json();
-            setOrderDetail(data);
+            setOrderDetail(response.data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Bilinmeyen hata');
             setIsOpen(false);
