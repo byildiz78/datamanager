@@ -225,7 +225,7 @@ export default function LoginPage() {
         <div
             className={cn(
                 "min-h-screen w-full flex flex-col items-center justify-between relative overflow-hidden",
-                bgImageLoaded ? `bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/background1.jpg')] dark:bg-gray-900 bg-cover bg-center bg-no-repeat` : "bg-gray-900",
+                bgImageLoaded ? `bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? 'PathNull'}/images/background/background1.jpg')] dark:bg-gray-900 bg-cover bg-center bg-no-repeat` : "bg-gray-900",
                 "transition-all duration-300"
             )}
         >
@@ -264,7 +264,7 @@ export default function LoginPage() {
             <div className="absolute left-4 top-4 lg:left-8 lg:top-8 md:ml-[4rem] sm:block hidden">
                 <div className="relative h-12 w-48 transition-all duration-300 hover:scale-105">
                     <Image
-                        src="/images/robotpos-logo.png"
+                        src={`${process.env.NEXT_PUBLIC_BASEPATH ?? 'PathNull'}/images/robotpos-logo.png`}
                         alt="RobotPOS Logo"
                         fill
                         priority
@@ -278,7 +278,7 @@ export default function LoginPage() {
             <div className="absolute left-1/2 -translate-x-1/2 top-4 sm:hidden block">
                 <div className="relative h-10 w-40 transition-all duration-300">
                     <Image
-                        src="/images/robotpos-logo.png"
+                        src={`${process.env.NEXT_PUBLIC_BASEPATH ?? 'PathNull'}/images/robotpos-logo.png`}
                         alt="RobotPOS Logo"
                         fill
                         priority
