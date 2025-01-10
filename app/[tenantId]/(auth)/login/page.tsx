@@ -21,7 +21,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
-import axios, {isAxiosError} from "@/lib/axios";
+import axios, { isAxiosError } from "@/lib/axios";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -230,13 +230,14 @@ export default function LoginPage() {
             )}
         >
             {/* Preload image */}
-            <link
-                rel="preload"
-                href={`${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`}
-
-                as="image"
-                type="image/jpeg"
+            <Image
+                src={`${process.env.NEXT_PUBLIC_BASEPATH}/images/background/background1.jpg`}
+                alt="RobotPOS Background"
+                fill
+                priority
+                className="object-cover"
             />
+
             {/* Noise overlay */}
             <div className={`fixed inset-0 bg-[url('${process.env.NEXT_PUBLIC_BASEPATH ?? ''}/images/background/noise.png')] opacity-10 mix-blend-overlay pointer-events-none`} />
 
