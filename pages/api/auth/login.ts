@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { Dataset } from '@/pages/api/dataset';
 import { extractTenantId } from '@/lib/utils';
 
+
 const ACCESS_TOKEN_SECRET = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET);
 const REFRESH_TOKEN_SECRET = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET);
 const TOKEN_ISSUER = process.env.TOKEN_ISSUER || 'ROBOTPOS';
@@ -46,15 +47,14 @@ export default async function handler(
     }
 
     try {
-        // Get tenant ID from request headers or URL
         const tenantId = extractTenantId(req.headers.referer);
         const { username, password } = req.body;
         const encryptedpass = encrypt(password);
         const instance = Dataset.getInstance();
         
-        const query = "SELECT TOP 1 UserID, UserName,Email,CONCAT(Name,' ',SurName) as Name FROM Efr_Users WHERE UserName = @username AND EncryptedPass = @password AND IsActive=1";
+        const query = "SELECT TOP 1 UserID, UserName,Email,CONCAT(Name,' ',SurName) as Name,Category as UserCategory FROM Efr_Users WHERE UserName = @username AND EncryptedPass = @password AND IsActive=1";
 
-        const response = await instance.executeQuery<{ UserID: number; UserName: string, Email: string, Name: string }[]>({
+        const response = await instance.executeQuery<{ UserID: number; UserName: string, Email: string, Name: string, UserCategory: string }[]>({
             query,
             parameters: {
                 username: username,
@@ -62,7 +62,6 @@ export default async function handler(
             },
             req
         });
-
         const user = response[0]
         if (user) {
             let tokenPayload = {
@@ -82,32 +81,26 @@ export default async function handler(
                 .setIssuedAt(currentTimestamp)
                 .sign(ACCESS_TOKEN_SECRET);
             const accessTokenCookie = serialize(`${tenantId}_access_token`, accessToken, {
-                httpOnly: false,
-                //secure: NODE_ENV === 'production',
-                //sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+                httpOnly: true,
                 path: '/',
-                //...(cookieDomain ? { domain: cookieDomain } : {})
             });
 
             const refreshToken = await new SignJWT(tokenPayload)
                 .setProtectedHeader({ alg: REFRESH_TOKEN_ALGORITHM })
-                //.setExpirationTime(currentTimestamp + REFRESH_TOKEN_LIFETIME)
                 .setIssuer(TOKEN_ISSUER)
                 .setAudience(tenantId)
                 .setIssuedAt(currentTimestamp)
                 .sign(REFRESH_TOKEN_SECRET);
             const refreshTokenCookie = serialize(`${tenantId}_refresh_token`, refreshToken, {
-                httpOnly: false,
-                //secure: NODE_ENV === 'production',
-                //sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+                httpOnly: true,
                 path: '/',
-                //...(cookieDomain ? { domain: cookieDomain } : {})
             });
 
             res.setHeader('Set-Cookie', [accessTokenCookie, refreshTokenCookie]);
             return res.status(200).json({ 
                 userId: user.UserID, 
                 userName: user.UserName,
+                userCategory: user.UserCategory,
                 name: user.Name,
                 email: user.Email,
                 message: 'Login successful' 

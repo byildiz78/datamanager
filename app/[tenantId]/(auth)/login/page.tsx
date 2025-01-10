@@ -136,14 +136,18 @@ export default function LoginPage() {
                     localStorage.setItem(`userData_${tenantId}`, JSON.stringify({
                         name: response.data.name,
                         email: response.data.email,
+                        userId: response.data.userId,
+                        username: response.data.username,
+                        usercategory: response.data.userCategory,
                         settings: settings
                     }));
                 } catch (error) {
-                    console.error('Settings alınamadı:', error);
-                    // Default settings ile devam et
                     localStorage.setItem(`userData_${tenantId}`, JSON.stringify({
                         name: response.data.name,
                         email: response.data.email,
+                        userId: response.data.userId,
+                        username: response.data.username,
+                        usercategory: response.data.usercategory,
                         settings: {
                             minDiscountAmount: 0,
                             minCancelAmount: 0,
