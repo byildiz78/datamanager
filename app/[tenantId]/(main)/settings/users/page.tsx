@@ -48,7 +48,7 @@ export default function UsersPage() {
         addTab({
             id: tabId,
             title: "Yeni Kullanıcı",
-            lazyComponent: () => import("./user-form").then(mod => ({
+            lazyComponent: () => import("./create/user-form").then(mod => ({
                 default: () => (
                     <div className="p-8">
                         <div className="rounded-lg border bg-card p-6">
