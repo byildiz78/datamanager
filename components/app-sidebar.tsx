@@ -95,26 +95,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         user: {
             name: userData.name,
             email: userData.email,
-            avatar: "/images/avatar.png",
+            avatar: `${process.env.NEXT_PUBLIC_BASEPATH || ''}/images/avatar.png`,
         },
         teams: [
             {
                 name: "robotPOS Enterprise",
                 href: "/[tenantId]/(main)/dashboard",
-                logo: "/images/Data.png",
+                logo: `${process.env.NEXT_PUBLIC_BASEPATH || ''}/images/Data.png`,
                 plan: "Data Manager",
                 className: "bg-blue-200",
             },
             {
                 name: "robotPOS Enterprise",
                 href: "http://localhost:3000/tavukdunyasi",
-                logo: "/images/Audit.png",
+                logo: `${process.env.NEXT_PUBLIC_BASEPATH || ''}/images/Audit.png`,
                 plan: "Operation Manager",
                 className: "bg-blue-200",
             },
             {
                 name: "robotPOS Enterprise",
-                logo: "/images/Franchise.png",
+                logo: `${process.env.NEXT_PUBLIC_BASEPATH || ''}/images/Franchise.png`,
                 plan: "Franchise Manager",
                 className: "bg-blue-200",
             },
