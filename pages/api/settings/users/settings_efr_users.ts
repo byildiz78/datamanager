@@ -31,7 +31,7 @@ ef.UserPWD,
   WHEN 11 THEN 'Pazarlama' 
   WHEN 12 THEN 'Şube' 
   ELSE 'Bilinmiyor' END as Category,
---ef.UserBranchs,
+ef.UserBranchs,
 ef.DefaultCountry,
 ef.LanguageName,
 ef.DisableNotification,
