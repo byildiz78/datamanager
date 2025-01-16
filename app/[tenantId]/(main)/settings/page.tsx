@@ -164,7 +164,7 @@ export default function SettingsPage() {
                       placeholder="● ● ● ●"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="relative text-center text-2xl tracking-[1em] py-6 bg-background/80 border-neutral-200/20 dark:border-neutral-800/20 transition-colors placeholder:text-foreground/20 placeholder:tracking-normal"
+                      className="h-14 w-full rounded-md border-0 bg-background/80 px-3 py-6 text-center text-2xl tracking-[1em] shadow-sm transition-colors placeholder:text-foreground/20 placeholder:tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:bg-background/90"
                       maxLength={4}
                     />
                   </div>
