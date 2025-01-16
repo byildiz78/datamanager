@@ -99,24 +99,24 @@ TabsList.displayName = TabsPrimitive.List.displayName
 // İkon eşleştirme helper fonksiyonu
 const getRandomIcon = () => {
   const icons = [
+    Home, Settings, Users, Bell, Search, Mail, 
     FileText, Code, Database, Bot, MessageSquare, 
     BarChart, PieChart, LineChart, Table, Folder,
     FileJson, FileSpreadsheet, Filter, List
   ]
   const RandomIcon = icons[Math.floor(Math.random() * icons.length)]
-  return <RandomIcon className="w-4 h-4" />
+  return RandomIcon
 }
 
 const getTabIcon = (label: string) => {
-  const iconMap: Record<string, React.ReactNode> = {
-    home: <Home className="w-4 h-4 mr-2" />,
+  const iconMap: { [key: string]: React.ReactNode } = {
+    notifications: <Bell className="w-4 h-4 mr-2" />,
     settings: <Settings className="w-4 h-4 mr-2" />,
     users: <Users className="w-4 h-4 mr-2" />,
-    notifications: <Bell className="w-4 h-4 mr-2" />,
     search: <Search className="w-4 h-4 mr-2" />,
     messages: <Mail className="w-4 h-4 mr-2" />,
   }
-  return iconMap[label.toLowerCase()] || getRandomIcon()
+  return iconMap[label.toLowerCase()]
 }
 
 const TabsTrigger = React.forwardRef<
@@ -128,6 +128,12 @@ const TabsTrigger = React.forwardRef<
 >(({ className, children, onClose, icon, ...props }, ref) => {
   const defaultIcon = typeof children === 'string' ? getTabIcon(children.toString()) : null
   const tabIcon = icon || defaultIcon
+
+  // Memoize the random icon component
+  const RandomIconComponent = React.useMemo(() => {
+    if (tabIcon) return null
+    return getRandomIcon()
+  }, [tabIcon])
 
   return (
     <TabsPrimitive.Trigger
@@ -150,7 +156,7 @@ const TabsTrigger = React.forwardRef<
       {/* Tab içeriği */}
       <div className="flex items-center space-x-2">
         <div className="transition-transform duration-200 group-hover:scale-110">
-          {tabIcon || getRandomIcon()}
+          {tabIcon || (RandomIconComponent && <RandomIconComponent className="w-4 h-4" />)}
         </div>
         <span className="font-medium">{children}</span>
       </div>
