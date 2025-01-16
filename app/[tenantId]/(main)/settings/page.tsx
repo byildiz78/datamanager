@@ -5,7 +5,7 @@ import { Users, Store, FileText, Bell, List, Shield, Database, Settings, Workflo
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTabStore } from "@/stores/tab-store";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 
 export default function SettingsPage() {
@@ -15,6 +15,12 @@ export default function SettingsPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [currentTime, setCurrentTime] = useState("");
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Auto focus password input when component mounts
+    passwordInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -157,15 +163,29 @@ export default function SettingsPage() {
                 </div>
 
                 <form onSubmit={handlePasswordSubmit} className="w-full space-y-6">
+                  <input 
+                    type="text" 
+                    autoComplete="username" 
+                    defaultValue="admin" 
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    style={{ display: 'none' }}
+                    readOnly
+                  />
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-600/20 rounded-lg blur-sm transition duration-200 group-hover:blur-md group-hover:from-primary/30 group-hover:to-purple-600/30" />
                     <Input
+                      ref={passwordInputRef}
                       type="password"
                       placeholder="● ● ● ●"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-14 w-full rounded-md border-0 bg-background/80 px-3 py-6 text-center text-2xl tracking-[1em] shadow-sm transition-colors placeholder:text-foreground/20 placeholder:tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:bg-background/90"
+                      className="relative text-center text-2xl tracking-[1em] py-6 bg-background/80 border-neutral-200/20 dark:border-neutral-800/20 transition-colors placeholder:text-foreground/20 placeholder:tracking-normal focus-visible:ring-primary"
                       maxLength={4}
+                      style={{ height: '60px' }}
+                      autoComplete="current-password"
+                      spellCheck={false}
+                      aria-label="Şifre"
                     />
                   </div>
 
