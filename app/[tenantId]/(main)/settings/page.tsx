@@ -1,14 +1,45 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Store, FileText, Bell, List, Shield, Database, Settings, Workflow } from "lucide-react";
+import { Users, Store, FileText, Bell, List, Shield, Database, Settings, Workflow, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTabStore } from "@/stores/tab-store";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 
 export default function SettingsPage() {
   const tabStore = useTabStore();
   const { addTab, setActiveTab } = tabStore;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [currentTime, setCurrentTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      setCurrentTime(`${hours}${minutes}`);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === currentTime) {
+      setIsAuthenticated(true);
+      setError("");
+    } else {
+      setError("Yanlış şifre!");
+      setPassword("");
+    }
+  };
 
   const settings = [
     {
@@ -93,6 +124,81 @@ export default function SettingsPage() {
     });
     setActiveTab(setting.tabId);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="h-full w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-background flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md px-4"
+        >
+          <Card className="relative overflow-hidden border-neutral-200/20 dark:border-neutral-800/20">
+            {/* Decorative elements */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-background" />
+            <div className="absolute inset-0 bg-grid-primary/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
+            
+            <div className="relative p-8 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-6">
+                {/* Icon container with animated gradient border */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                  <div className="relative p-5 bg-background rounded-full">
+                    <Lock className="w-8 h-8 text-primary group-hover:text-primary/80 transition-colors" />
+                  </div>
+                </div>
+
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Ayarlar Sayfası
+                  </h2>
+                  <div className="h-1 w-20 mx-auto bg-gradient-to-r from-primary/60 to-purple-600/60 rounded-full" />
+                </div>
+
+                <form onSubmit={handlePasswordSubmit} className="w-full space-y-6">
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-600/20 rounded-lg blur-sm transition duration-200 group-hover:blur-md group-hover:from-primary/30 group-hover:to-purple-600/30" />
+                    <Input
+                      type="password"
+                      placeholder="● ● ● ●"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="relative text-center text-2xl tracking-[1em] py-6 bg-background/80 border-neutral-200/20 dark:border-neutral-800/20 transition-colors placeholder:text-foreground/20 placeholder:tracking-normal"
+                      maxLength={4}
+                    />
+                  </div>
+
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm text-red-500 text-center bg-red-500/10 py-2 px-4 rounded-lg border border-red-500/20"
+                    >
+                      {error}
+                    </motion.p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground py-6 transition-all duration-300 shadow-lg hover:shadow-primary/25"
+                  >
+                    <motion.div
+                      className="flex items-center justify-center gap-2"
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>Giriş Yap</span>
+                    </motion.div>
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full bg-gradient-to-br from-background via-purple-50/30 dark:via-purple-950/30 to-background">
