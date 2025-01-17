@@ -123,11 +123,17 @@ export default function SettingsPage() {
   ];
 
   const handleSettingClick = (setting: typeof settings[0]) => {
-    addTab({
-      id: setting.tabId,
-      title: setting.title,
-      lazyComponent: () => import(`./${setting.route}/page`)
-    });
+    // Check if tab is already open
+    const isTabOpen = tabStore.tabs.some(tab => tab.id === setting.tabId);
+    
+    if (!isTabOpen) {
+      addTab({
+        id: setting.tabId,
+        title: setting.title,
+        lazyComponent: () => import(`./${setting.route}/page`)
+      });
+    }
+    
     setActiveTab(setting.tabId);
   };
 

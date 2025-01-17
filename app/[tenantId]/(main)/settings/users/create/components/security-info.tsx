@@ -1,6 +1,6 @@
 'use client';
 
-import { Lock, Shield, Bell, Mail, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Lock, Shield, Bell, Mail, MessageSquare, LayoutDashboard, Languages, Ticket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -236,6 +236,48 @@ export function SecurityInfo({
                     setFormData({
                       ...formData,
                       DisableDashboardReport: checked,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Languages className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Dil Editörü</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Dil editörünü devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableLangaugeEditor}
+                  onCheckedChange={(checked) =>
+                    setFormData({
+                      ...formData,
+                      DisableLangaugeEditor: checked,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Ticket Kullanıcısı</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Ticket sistemine erişim izni ver
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.TicketUser}
+                  onCheckedChange={(checked) =>
+                    setFormData({
+                      ...formData,
+                      TicketUser: checked,
                     })
                   }
                 />

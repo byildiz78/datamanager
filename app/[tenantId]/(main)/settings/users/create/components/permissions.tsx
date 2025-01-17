@@ -12,62 +12,24 @@ import {
 } from "@/components/ui/accordion";
 import { Efr_Users } from "@/pages/api/settings/users/types";
 import { useState } from "react";
+import { RawReportData } from "@/types/tables";
 
 interface PermissionsProps {
   formData: Efr_Users;
   setFormData: (data: Efr_Users) => void;
+  webreportMenuItems: RawReportData[];
 }
 
-// Örnek rapor grupları
-const reportGroups = [
-  {
-    id: "financial",
-    name: "Finansal Raporlar",
-    reports: [
-      { id: "income", name: "Gelir Raporu" },
-      { id: "expense", name: "Gider Raporu" },
-      { id: "profit", name: "Kar/Zarar Raporu" },
-      { id: "balance", name: "Bilanço" },
-    ],
-  },
-  {
-    id: "operational",
-    name: "Operasyonel Raporlar",
-    reports: [
-      { id: "daily", name: "Günlük İşlem Raporu" },
-      { id: "weekly", name: "Haftalık Performans" },
-      { id: "monthly", name: "Aylık Özet" },
-    ],
-  },
-  {
-    id: "customer",
-    name: "Müşteri Raporları",
-    reports: [
-      { id: "satisfaction", name: "Memnuniyet Anketi" },
-      { id: "feedback", name: "Geri Bildirimler" },
-      { id: "complaints", name: "Şikayet Analizi" },
-    ],
-  },
-  {
-    id: "inventory",
-    name: "Envanter Raporları",
-    reports: [
-      { id: "stock", name: "Stok Durumu" },
-      { id: "movement", name: "Stok Hareketleri" },
-      { id: "valuation", name: "Değerleme Raporu" },
-    ],
-  },
-];
-
-export function Permissions({ formData, setFormData }: PermissionsProps) {
+export function Permissions({ formData, setFormData, webreportMenuItems }: PermissionsProps) {
   const [hiddenReports, setHiddenReports] = useState<string[]>(
     formData.HiddenReports ? formData.HiddenReports.split(",") : []
   );
 
-  const toggleReport = (reportId: string) => {
-    const newHiddenReports = hiddenReports.includes(reportId)
-      ? hiddenReports.filter((id) => id !== reportId)
-      : [...hiddenReports, reportId];
+  const toggleReport = (reportId: number) => {
+    const reportIdString = reportId.toString();
+    const newHiddenReports = hiddenReports.includes(reportIdString)
+      ? hiddenReports.filter((id) => id !== reportIdString)
+      : [...hiddenReports, reportIdString];
 
     setHiddenReports(newHiddenReports);
     setFormData({
@@ -76,11 +38,11 @@ export function Permissions({ formData, setFormData }: PermissionsProps) {
     });
   };
 
-  const toggleGroup = (groupId: string) => {
-    const groupReports = reportGroups
-      .find((group) => group.id === groupId)
-      ?.reports.map((report) => report.id) || [];
+  const toggleGroup = (groupId: number) => {
+    const group = webreportMenuItems.find((item) => item.Group.GroupAutoID === groupId);
+    if (!group) return;
 
+    const groupReports = group.Reports.map((report) => report.ReportID.toString());
     const allGroupReportsHidden = groupReports.every((reportId) =>
       hiddenReports.includes(reportId)
     );
@@ -111,28 +73,28 @@ export function Permissions({ formData, setFormData }: PermissionsProps) {
           </div>
 
           <Accordion type="multiple" className="space-y-4">
-            {reportGroups.map((group) => (
+            {webreportMenuItems.map((group) => (
               <AccordionItem
-                key={group.id}
-                value={group.id}
+                key={group.Group.GroupAutoID}
+                value={group.Group.GroupAutoID.toString()}
                 className="border rounded-lg bg-card"
               >
                 <AccordionTrigger className="px-4 hover:no-underline hover:bg-muted/50 rounded-t-lg [&[data-state=open]>div]:bg-muted/50 [&[data-state=open]]:rounded-b-none transition-all">
                   <div className="flex items-center justify-between flex-1 py-2">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{group.name}</span>
+                      <span className="font-medium">{group.Group.GroupName}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div
                         className="flex items-center gap-2 px-2 py-1 rounded text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleGroup(group.id);
+                          toggleGroup(group.Group.GroupAutoID);
                         }}
                       >
-                        {group.reports.every((report) =>
-                          hiddenReports.includes(report.id)
+                        {group.Reports.every((report) =>
+                          hiddenReports.includes(report.ReportID.toString())
                         ) ? (
                           <>
                             <Eye className="w-3 h-3" />
@@ -145,30 +107,31 @@ export function Permissions({ formData, setFormData }: PermissionsProps) {
                           </>
                         )}
                       </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
                     </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-3">
                   <div className="space-y-3 pt-3">
-                    {group.reports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                      >
-                        <Label
-                          htmlFor={report.id}
-                          className="text-sm cursor-pointer"
+                    {group.Reports
+                      .sort((a, b) => (a.DisplayOrderID || 0) - (b.DisplayOrderID || 0))
+                      .map((report) => (
+                        <div
+                          key={report.AutoID}
+                          className="flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg transition-colors"
                         >
-                          {report.name}
-                        </Label>
-                        <Switch
-                          id={report.id}
-                          checked={!hiddenReports.includes(report.id)}
-                          onCheckedChange={() => toggleReport(report.id)}
-                        />
-                      </div>
-                    ))}
+                          <Label
+                            htmlFor={report.AutoID.toString()}
+                            className="text-sm cursor-pointer"
+                          >
+                            {report.ReportName}
+                          </Label>
+                          <Switch
+                            id={report.AutoID.toString()}
+                            checked={!hiddenReports.includes(report.ReportID.toString())}
+                            onCheckedChange={() => toggleReport(report.ReportID)}
+                          />
+                        </div>
+                      ))}
                   </div>
                 </AccordionContent>
               </AccordionItem>
