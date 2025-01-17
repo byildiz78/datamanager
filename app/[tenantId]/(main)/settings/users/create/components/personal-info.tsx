@@ -6,27 +6,44 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Efr_Users, UserCategory } from "@/pages/api/settings/users/types";
+import { Efr_Tags } from "@/pages/api/settings/efr_tag/types";
 
 interface PersonalInfoProps {
   formData: Efr_Users;
   setFormData: (data: Efr_Users) => void;
+  efr_tags: Efr_Tags[];
 }
 
-export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
+export function PersonalInfo({ formData, setFormData, efr_tags }: PersonalInfoProps) {
   return (
     <Card className="border-none shadow-lg bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-sm">
       <CardContent className="pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Ad Soyad</Label>
+              <Label className="text-sm font-medium">Ad</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Ad Soyad"
+                  placeholder="Ad"
                   value={formData.Name}
                   onChange={(e) =>
                     setFormData({ ...formData, Name: e.target.value })
+                  }
+                  className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Soyad</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Soyad"
+                  value={formData.SurName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, SurName: e.target.value })
                   }
                   className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                 />
@@ -113,7 +130,7 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Ülke</Label>
             <Select
@@ -132,6 +149,30 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                     Türkiye
                   </div>
                 </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Etiket</Label>
+            <Select
+              value={formData.TagID?.toString()}
+              onValueChange={(value) =>
+                setFormData({ ...formData, TagID: parseInt(value) })
+              }
+            >
+              <SelectTrigger className="bg-background/50 border-border/50 focus:ring-primary/20 transition-all duration-200">
+                <SelectValue placeholder="Etiket seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {efr_tags.map((tag) => (
+                  <SelectItem key={tag.TagID} value={tag.TagID.toString()}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${tag.IsDefault ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`} />
+                      {tag.TagTitle}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

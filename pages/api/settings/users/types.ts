@@ -24,6 +24,7 @@ export type Efr_Users = {
     PasswordChangeDateTime?: Date;
     IsActive?: boolean;
     Name?: string;      // CONCAT sonucu
+    SurName?: string;
     TaxNo?: string;
     PhoneNumber?: string;
     EMail?: string;
