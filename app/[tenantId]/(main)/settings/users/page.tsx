@@ -8,10 +8,11 @@ import { useTabStore } from "@/stores/tab-store";
 import axios, { isAxiosError } from "@/lib/axios";
 import { useUsersStore } from "@/stores/settings/users/users-store";
 import { toast } from '@/components/ui/toast/use-toast';
+import { Efr_Users } from '@/pages/api/settings/users/types';
 
 export default function UsersPage() {
     const { users, setUsers } = useUsersStore();
-    const { addTab, setActiveTab } = useTabStore();
+    const { addTab, setActiveTab ,removeTab} = useTabStore();
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -35,31 +36,31 @@ export default function UsersPage() {
         fetchUsers();
     }, [setUsers]);
 
-    const handleEditUser = (user: any) => {
-        // TODO: Implement edit functionality
-        console.log('Edit user:', user);
+    const handleEditUser = (user: Efr_Users) => {
+        const tabId = `edit-user-${user.UserID}`;
+        const tab = {
+            id: tabId,
+            title: `Kullanıcı Düzenle - ${user.Name}`,
+            props: { data: user },
+            lazyComponent: () => import('./create/user-form').then(module => ({
+                default: (props: any) => {
+                    const Component = module.default;
+                    const tabProps = useTabStore.getState().getTabProps(tabId);
+                    return <Component {...tabProps} />;
+                }
+            }))
+        };
+        addTab(tab);
+        setActiveTab(tabId);
     };
-
-    const handleDeleteUser = (id: string) => {
-        // TODO: Implement delete functionality
-        console.log('Delete user:', id);
-    };
-
+    
     const handleAddUserClick = () => {
         const tabId = "new-user-form";
         addTab({
             id: tabId,
             title: "Yeni Kullanıcı",
-            lazyComponent: () => import("./create/user-form").then(mod => ({
-                default: () => (
-                    <div className="p-8">
-                        <div className="rounded-lg border bg-card p-6">
-                            <mod.UserForm
-                                onClose={() => setActiveTab("users-list")}
-                            />
-                        </div>
-                    </div>
-                )
+            lazyComponent: () => import('./create/user-form').then(module => ({
+                default: (props: any) => <module.default {...props} />
             }))
         });
         setActiveTab(tabId);
@@ -83,8 +84,8 @@ export default function UsersPage() {
                         </div>
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-background shadow-sm flex items-center justify-center ring-1 ring-border/50">
                             <div className={`w-2 h-2 rounded-full ${user.IsActive
-                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse'
-                                    : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse'
+                                : 'bg-gradient-to-r from-gray-400 to-gray-500'
                                 }`} />
                         </div>
                     </div>
@@ -149,8 +150,8 @@ export default function UsersPage() {
                         : 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-600 ring-1 ring-gray-500/20'}`}
                 >
                     <span className={`w-1.5 h-1.5 rounded-full ${user.IsActive
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-[pulse_2s_ease-in-out_infinite]'
-                            : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-[pulse_2s_ease-in-out_infinite]'
+                        : 'bg-gradient-to-r from-gray-400 to-gray-500'
                         }`} />
                     {user.IsActive ? 'Aktif' : 'Pasif'}
                 </span>
@@ -245,15 +246,6 @@ export default function UsersPage() {
                         >
                             <Pencil className="w-4 h-4" />
                             <span className="sr-only">Düzenle</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
-                            onClick={() => handleDeleteUser(user.UserID!)}
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            <span className="sr-only">Sil</span>
                         </Button>
                     </div>
                 )}

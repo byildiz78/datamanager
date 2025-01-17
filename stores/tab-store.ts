@@ -6,7 +6,8 @@ interface Tab {
   title: string;
   url?: string;
   filter?: any;
-  lazyComponent: () => Promise<{ default: React.ComponentType }>;
+  props?: any;
+  lazyComponent: () => Promise<{ default: React.ComponentType<any> }>;
 }
 
 interface TabStore {
@@ -19,6 +20,7 @@ interface TabStore {
   setActiveTab: (id: string) => void;
   setTabFilter: (id: string, filter: any) => void;
   getTabFilter: (id: string) => any;
+  getTabProps: (id: string) => any;
   setRenderedComponent: (id: string, component: React.ReactNode) => void;
 }
 
@@ -26,11 +28,12 @@ export const useTabStore = create<TabStore>((set, get) => ({
   tabs: [],
   activeTab: 'dashboard',
   renderedComponents: {},
-  addTab: (tab) =>
+  addTab: (tab) => {
     set((state) => ({
       tabs: [...state.tabs, tab],
       activeTab: tab.id,
-    })),
+    }));
+  },
   removeTab: (id) =>
     set((state) => ({
       tabs: state.tabs.filter((tab) => tab.id !== id),
@@ -55,6 +58,10 @@ export const useTabStore = create<TabStore>((set, get) => ({
   getTabFilter: (id) => {
     const tab = get().tabs.find((tab) => tab.id === id);
     return tab?.filter;
+  },
+  getTabProps: (id) => {
+    const tab = get().tabs.find((tab) => tab.id === id);
+    return tab?.props;
   },
   setRenderedComponent: (id, component) =>
     set((state) => ({
