@@ -69,7 +69,7 @@ ef.MinDiscountAmount,
 ef.MinCancelAmount,
 ef.MinSaleAmount
 FROM 
-efr_Users ef WITH (NOLOCK)
+efr_Users2 ef WITH (NOLOCK)
 WHERE
 ef.IsActive = 1
         `;

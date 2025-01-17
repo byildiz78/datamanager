@@ -1,8 +1,8 @@
 export type Efr_Users = {
     UserName?: string;
-    UserID?: string;
+    UserID?: number;
     UserBranchs?: string;
-    Category: number;
+    Category: number | string;
     ExpoToken: string;
     ExpoTokenUpdatedDate: Date;
     UserCode?: string;

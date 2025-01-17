@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/common';
 import { useTabStore } from "@/stores/tab-store";
 import axios, { isAxiosError } from "@/lib/axios";
-import { Efr_Users } from '@/pages/api/settings/users/types';
-
+import { useUsersStore } from "@/stores/settings/users/users-store";
+import { toast } from '@/components/ui/toast/use-toast';
 
 export default function UsersPage() {
-    const [users, setUsers] = React.useState<Efr_Users[]>([]);
+    const { users, setUsers } = useUsersStore();
     const { addTab, setActiveTab } = useTabStore();
     const [isLoading, setIsLoading] = React.useState(true);
 
@@ -18,22 +18,24 @@ export default function UsersPage() {
         const fetchUsers = async () => {
             try {
                 setIsLoading(true);
-                const { data } = await axios.get('/api/settings/users/settings_efr_users');
-                setUsers(data);
+                const response = await axios.get('/api/settings/users/settings_efr_users');
+                setUsers(response.data);
             } catch (error) {
                 console.error('Error fetching users:', error);
-                if (isAxiosError(error)) {
-                    console.error('Axios error:', error.response?.data);
-                }
+                toast({
+                    title: "Hata!",
+                    description: "Kullanıcılar yüklenirken bir hata oluştu.",
+                    variant: "destructive",
+                });
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchUsers();
-    }, []);
+    }, [setUsers]);
 
-    const handleEditUser = (user: Efr_Users) => {
+    const handleEditUser = (user: any) => {
         // TODO: Implement edit functionality
         console.log('Edit user:', user);
     };
@@ -65,12 +67,12 @@ export default function UsersPage() {
 
     const columns = [
         {
-            key: 'Name' as keyof Efr_Users,
+            key: 'Name' as keyof any,
             title: 'Ad Soyad',
             width: '250px',
             fixed: 'left' as const,
             sortable: true,
-            render: (user: Efr_Users) => (
+            render: (user: any) => (
                 <div className="flex items-center gap-3">
                     <div className="relative">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500/5 via-primary/5 to-blue-500/5 flex items-center justify-center ring-1 ring-border/50">
@@ -93,10 +95,10 @@ export default function UsersPage() {
             )
         },
         {
-            key: 'EMail' as keyof Efr_Users,
+            key: 'EMail' as keyof any,
             title: 'İletişim',
             width: '300px',
-            render: (user: Efr_Users) => (
+            render: (user: any) => (
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-sm">
                         <Mail className="w-3.5 h-3.5 text-violet-500" />
@@ -110,22 +112,22 @@ export default function UsersPage() {
             )
         },
         {
-            key: 'Category' as keyof Efr_Users,
+            key: 'Category' as keyof any,
             title: 'Rol',
             width: '150px',
             sortable: true,
-            render: (user: Efr_Users) => (
+            render: (user: any) => (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-violet-500/10 via-primary/10 to-blue-500/10 text-primary ring-1 ring-primary/20">
                     {user.Category}
                 </span>
             )
         },
         {
-            key: 'UserBranchs' as keyof Efr_Users,
+            key: 'UserBranchs' as keyof any,
             title: 'Şube',
             width: '180px',
             sortable: true,
-            render: (user: Efr_Users) => {
+            render: (user: any) => {
                 const branchCount = user.UserBranchs?.split(',').length || 0;
                 return (
                     <div className="flex items-center gap-2">
@@ -136,11 +138,11 @@ export default function UsersPage() {
             }
         },
         {
-            key: 'IsActive' as keyof Efr_Users,
+            key: 'IsActive' as keyof any,
             title: 'Durum',
             width: '150px',
             sortable: true,
-            render: (user: Efr_Users) => (
+            render: (user: any) => (
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium
           ${user.IsActive
                         ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20'
@@ -155,11 +157,11 @@ export default function UsersPage() {
             )
         },
         {
-            key: 'LastLoginDatetime1' as keyof Efr_Users,
+            key: 'LastLoginDatetime1' as keyof any,
             title: 'Son Giriş',
             width: '200px',
             sortable: true,
-            render: (user: Efr_Users) => (
+            render: (user: any) => (
                 <div className="flex flex-col gap-1">
                     <div className="text-sm flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-violet-500" />
@@ -181,7 +183,7 @@ export default function UsersPage() {
 
     const filters = [
         {
-            key: 'Category' as keyof Efr_Users,
+            key: 'Category' as keyof any,
             title: 'Rol',
             options: [
                 { label: 'Standart', value: 'Standart' },
@@ -199,7 +201,7 @@ export default function UsersPage() {
             ]
         },
         {
-            key: 'IsActive' as keyof Efr_Users,
+            key: 'IsActive' as keyof any,
             title: 'Durum',
             options: [
                 { label: 'Aktif', value: 'true' },
