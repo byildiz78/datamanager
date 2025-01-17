@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { User, Shield, Store, FileText, Save, X, ArrowRight, ArrowLeft } from "lucide-react";
+import { User, Shield, Store, FileText, Save, X, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -15,18 +15,23 @@ import React from "react";
 import axios from "@/lib/axios";
 import { RawReportData } from "@/types/tables";
 import { Efr_Tags } from "@/pages/api/settings/efr_tag/types";
+import { toast } from "@/components/ui/toast/use-toast";
+import { useRouter } from "next/navigation";
+import { encrypt } from "@/pages/api/auth/login";
+import { useTabStore } from "@/stores/tab-store";
 
 interface UserFormProps {
-  onSubmit: (data: Efr_Users) => void;
   onClose: () => void;
   selectedUser?: Efr_Users;
 }
 
-export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
+export function UserForm({ onClose, selectedUser }: UserFormProps) {
+  const router = useRouter();
   const { selectedFilter } = useFilterStore();
   const [webreportMenuItems, setWebreportMenuItems] = React.useState<RawReportData[]>([]);
   const [efr_tags, setEfr_tags] = React.useState<Efr_Tags[]>([]);
-
+  const { removeTab, setActiveTab} = useTabStore();
+  const [activeTab, setActivesTab] = useState("personal");
   const [formData, setFormData] = useState<Efr_Users>({
     UserName: selectedUser?.UserName || "",
     Name: selectedUser?.Name || "",
@@ -53,8 +58,6 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
     ExpoTokenUpdatedDate: new Date(),
   });
 
-  const [activeTab, setActiveTab] = useState("personal");
-
   const [passwordRules, setPasswordRules] = useState({
     length: false,
     lowercase: false,
@@ -73,16 +76,135 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    // Zorunlu alanları kontrol et
+    const requiredFields = {
+      UserName: "Kullanıcı Adı",
+      Name: "Ad",
+      SurName: "Soyad",
+      EncryptedPass: "Şifre",
+      EMail: "E-posta",
+      PhoneNumber: "Telefon Numarası",
+    };
+
+    const errors: string[] = [];
+
+    // Boş alan kontrolü
+    Object.entries(requiredFields).forEach(([field, label]) => {
+      if (!formData[field as keyof Efr_Users]) {
+        errors.push(`${label} alanı zorunludur`);
+      }
+    });
+
+    // E-posta formatı kontrolü
+    if (formData.EMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.EMail)) {
+      errors.push("Geçerli bir e-posta adresi giriniz");
+    }
+
+    // Şifre kuralları kontrolü
+    if (formData.EncryptedPass && !Object.values(passwordRules).every(rule => rule)) {
+      errors.push("Şifre, belirlenen kurallara uygun olmalıdır");
+    }
+
+    // Telefon numarası kontrolü
+    if (formData.PhoneNumber && !/^\d{10}$/.test(formData.PhoneNumber.replace(/\D/g, ''))) {
+      errors.push("Geçerli bir telefon numarası giriniz");
+    }
+
+    if (errors.length > 0) {
+      toast({
+        title: "Hata!",
+        description: (
+          <div className="space-y-2">
+            {errors.map((error, index) => (
+              <p key={index} className="text-sm text-white">
+                • {error}
+              </p>
+            ))}
+          </div>
+        ),
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (activeTab !== "permissions") {
       const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
       if (currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1].id);
+        setActivesTab(tabs[currentIndex + 1].id);
       }
       return;
     }
-    onSubmit(formData);
+
+    // Form validasyonu
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      // Şifreyi şifrele
+      const encryptedPass = encrypt(formData.EncryptedPass || '');
+      if (!encryptedPass) {
+        toast({
+          title: "Hata!",
+          description: "Şifre alanı boş olamaz.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const dataToSend = {
+        ...formData,
+        EncryptedPass: encryptedPass,
+        UserPWD: encryptedPass
+      };
+
+      const response = await axios.post('/api/settings/users/settings_efr_users_create', dataToSend);
+      
+      if (response.data.success) {
+        toast({
+          title: (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <span className="font-semibold text-emerald-500">Başarılı!</span>
+            </div>
+          ),
+          description: (
+            <div className="ml-6">
+              <p className="text-gray-600 dark:text-gray-300">Kullanıcı başarıyla kaydedildi.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {formData.UserName} Kullanıcısı oluşturuldu.
+              </p>
+            </div>
+          ),
+          className: "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800",
+          duration: 5000,
+        });
+
+        const tabId = `new-user-form`;
+        removeTab(tabId);
+        setActiveTab('users-list');
+
+      } else {
+        toast({
+          title: "Hata!",
+          description: response.data.message || "Kullanıcı oluşturulurken bir hata oluştu.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Hata!",
+        description: "Kullanıcı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -151,7 +273,7 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-grow">
+      <Tabs value={activeTab} onValueChange={setActivesTab} className="w-full flex-grow">
         <div className="flex-none mb-6">
           <div className="flex items-center gap-4">
             <TabsList className="w-[120vh] bg-gradient-to-b from-background/95 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-xl p-1.5 shadow-lg">
@@ -184,7 +306,7 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
                   onClick={() => {
                     const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
                     if (currentIndex > 0) {
-                      setActiveTab(tabs[currentIndex - 1].id);
+                      setActivesTab(tabs[currentIndex - 1].id);
                     }
                   }}
                   className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md hover:text-white transition-all"

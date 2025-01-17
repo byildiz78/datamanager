@@ -53,10 +53,6 @@ export default function UsersPage() {
                     <div className="p-8">
                         <div className="rounded-lg border bg-card p-6">
                             <mod.UserForm
-                                onSubmit={(userData) => {
-                                    setUsers(prev => [...prev, userData]);
-                                    setActiveTab("users-list");
-                                }}
                                 onClose={() => setActiveTab("users-list")}
                             />
                         </div>
@@ -168,8 +164,7 @@ export default function UsersPage() {
                     <div className="text-sm flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-violet-500" />
                         <span>
-                            {user.LastLoginDatetime1 ? new Date(user.LastLoginDatetime1).toLocaleDateString('tr-TR') : '-'}
-                        </span>
+                            {user.LastLoginDatetime1 ? new Date(user.LastLoginDatetime1).toLocaleDateString('tr-TR') : '-'}</span>
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-blue-500" />
@@ -177,8 +172,7 @@ export default function UsersPage() {
                             {user.LastLoginDatetime1 ? new Date(user.LastLoginDatetime1).toLocaleTimeString('tr-TR', {
                                 hour: '2-digit',
                                 minute: '2-digit'
-                            }) : '-'}
-                        </span>
+                            }) : '-'}</span>
                     </div>
                 </div>
             )
