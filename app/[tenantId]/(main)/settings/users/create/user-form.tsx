@@ -20,45 +20,101 @@ import { useRouter } from "next/navigation";
 import { encrypt } from "@/pages/api/auth/login";
 import { useTabStore } from "@/stores/tab-store";
 import { useUsersStore } from "@/stores/settings/users/users-store";
+import { categoryToNumber, numberToCategory } from "./lib";
 
 interface UserFormProps {
-  onClose: () => void;
-  selectedUser?: Efr_Users;
+  onClose?: () => void;
+  data?: Efr_Users;
 }
 
-export function UserForm({ onClose, selectedUser }: UserFormProps) {
+export default function UserForm(props: UserFormProps) {
+  const { onClose, data } = props;
   const router = useRouter();
   const { selectedFilter } = useFilterStore();
-  const { addUser } = useUsersStore();
+  const { addUser, updateUser } = useUsersStore();
   const [webreportMenuItems, setWebreportMenuItems] = React.useState<RawReportData[]>([]);
   const [efr_tags, setEfr_tags] = React.useState<Efr_Tags[]>([]);
-  const { removeTab, setActiveTab} = useTabStore();
+  const { removeTab, setActiveTab } = useTabStore();
   const [activeTab, setActivesTab] = useState("personal");
-  const [formData, setFormData] = useState<Efr_Users>({
-    UserName: selectedUser?.UserName || "",
-    Name: selectedUser?.Name || "",
-    SurName: selectedUser?.SurName || "",
-    PhoneCode: selectedUser?.PhoneCode || "+90",
-    PhoneNumber: selectedUser?.PhoneNumber || "",
-    EMail: selectedUser?.EMail || "",
-    EncryptedPass: "",
-    DefaultCountry: selectedUser?.DefaultCountry || "Türkiye",
-    Category: selectedUser?.Category || UserCategory.Standart,
-    UserBranchs: selectedUser?.UserBranchs || "",
-    TaxNo: selectedUser?.TaxNo || "",
-    IsActive: selectedUser?.IsActive ?? true,
-    DisableNotification: selectedUser?.DisableNotification || false,
-    DisableMailSettings: selectedUser?.DisableMailSettings || false,
-    DisableLangaugeEditor: selectedUser?.DisableLangaugeEditor || false,
-    DisableBranchMessage: selectedUser?.DisableBranchMessage || false,
-    DisableBranchControlForm: selectedUser?.DisableBranchControlForm || false,
-    DisableDashboardReport: selectedUser?.DisableDashboardReport || false,
-    SmsRequired: selectedUser?.SmsRequired || false,
-    PwdCantChange: selectedUser?.PwdCantChange || false,
-    TicketUser: selectedUser?.TicketUser || false,
-    ExpoToken: "",
-    ExpoTokenUpdatedDate: new Date(),
+
+  const [formData, setFormData] = useState<Efr_Users>(() => {
+    if (data) {
+      const nameParts = data.Name ? data.Name.split(' ') : ['', ''];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      let categoryValue: number;
+      if (typeof data.Category === 'string') {
+        categoryValue = categoryToNumber[data.Category] || 1;
+      } else if (typeof data.Category === 'number') {
+        categoryValue = data.Category;
+      } else {
+        categoryValue = 1;
+      }
+
+      const initialData = {
+        ...data,
+        Name: firstName,
+        SurName: lastName,
+        Category: categoryValue,
+        EncryptedPass: ""
+      };
+      return initialData;
+    }
+
+    return {
+      UserName: "",
+      Name: "",
+      SurName: "",
+      PhoneCode: "+90",
+      PhoneNumber: "",
+      EMail: "",
+      EncryptedPass: "",
+      DefaultCountry: "Türkiye",
+      Category: 1,
+      UserBranchs: "",
+      TaxNo: "",
+      IsActive: true,
+      DisableNotification: false,
+      DisableMailSettings: false,
+      DisableLangaugeEditor: false,
+      DisableBranchMessage: false,
+      DisableBranchControlForm: false,
+      DisableDashboardReport: false,
+      SmsRequired: false,
+      PwdCantChange: false,
+      TicketUser: false,
+      ExpoToken: "",
+      ExpoTokenUpdatedDate: new Date(),
+    };
   });
+
+  // data prop'u değiştiğinde formData'yı güncelle
+  React.useEffect(() => {
+    if (data) {
+      const nameParts = data.Name ? data.Name.split(' ') : ['', ''];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Kategori dönüşümü
+      let categoryValue: number;
+      if (typeof data.Category === 'string') {
+        categoryValue = categoryToNumber[data.Category] || 1;
+      } else if (typeof data.Category === 'number') {
+        categoryValue = data.Category;
+      } else {
+        categoryValue = 1;
+      }
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+        Name: firstName,
+        SurName: lastName,
+        Category: categoryValue,
+        EncryptedPass: ""
+      }));
+    }
+  }, [data]);
 
   const [passwordRules, setPasswordRules] = useState({
     length: false,
@@ -143,33 +199,42 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
       return;
     }
 
-    // Form validasyonu
     if (!validateForm()) {
       return;
     }
 
     try {
-      // Şifreyi şifrele
-      const encryptedPass = encrypt(formData.EncryptedPass || '');
-      if (!encryptedPass) {
-        toast({
-          title: "Hata!",
-          description: "Şifre alanı boş olamaz.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const dataToSend = {
         ...formData,
-        EncryptedPass: encryptedPass,
-        UserPWD: encryptedPass
+        Category: formData.Category // Kategori numarasını gönder
       };
 
-      const response = await axios.post('/api/settings/users/settings_efr_users_create', dataToSend);
-      
+      // Şifre kontrolü ve şifreleme
+      if (!data || formData.EncryptedPass) {
+        const encryptedPass = encrypt(formData.EncryptedPass || '');
+        if (!encryptedPass) {
+          toast({
+            title: "Hata!",
+            description: "Şifre alanı boş olamaz.",
+            variant: "destructive",
+          });
+          return;
+        }
+        dataToSend.EncryptedPass = encryptedPass;
+        dataToSend.UserPWD = encryptedPass;
+      }
+
+      // API endpoint ve method seçimi
+      const endpoint = data
+        ? '/api/settings/users/settings_efr_users_update'
+        : '/api/settings/users/settings_efr_users_create';
+
+      const response = await (data
+        ? axios.put(endpoint, dataToSend)
+        : axios.post(endpoint, dataToSend));
+
       if (response.data.success) {
-        // Store'a yeni kullanıcıyı ekle
+        // Category mapping
         const categoryMap: { [key: number]: string } = {
           1: 'Standart',
           2: 'Çoklu Şube',
@@ -185,13 +250,21 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
           12: 'Şube'
         };
 
-        addUser({
+        const userData = {
           ...dataToSend,
-          UserID: response.data.userId,
+          UserID: data?.UserID,
           Category: categoryMap[dataToSend.Category as number] || 'Bilinmiyor',
           Name: `${dataToSend.Name} ${dataToSend.SurName}`
-        });
+        };
 
+        // Store güncelleme
+        if (data) {
+          updateUser(userData);
+        } else {
+          addUser(userData);
+        }
+
+        // Başarı mesajı
         toast({
           title: (
             <div className="flex items-center gap-2">
@@ -201,9 +274,11 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
           ),
           description: (
             <div className="ml-6">
-              <p className="text-gray-600 dark:text-gray-300">Kullanıcı başarıyla kaydedildi.</p>
+              <p className="text-gray-600 dark:text-gray-300">
+                Kullanıcı başarıyla {data ? 'güncellendi' : 'kaydedildi'}.
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {formData.UserName} Kullanıcısı oluşturuldu.
+                {formData.UserName} kullanıcısı {data ? 'güncellendi' : 'oluşturuldu'}.
               </p>
             </div>
           ),
@@ -211,22 +286,23 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
           duration: 5000,
         });
 
-        const tabId = `new-user-form`;
+        // Tab kapatma
+        const tabId = data ? `edit-user-${data.UserID}` : 'new-user-form';
         removeTab(tabId);
         setActiveTab('users-list');
 
       } else {
         toast({
           title: "Hata!",
-          description: response.data.message || "Kullanıcı oluşturulurken bir hata oluştu.",
+          description: response.data.message || `Kullanıcı ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error:', error);
       toast({
         title: "Hata!",
-        description: "Kullanıcı oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.",
+        description: `Kullanıcı ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu. Lütfen tekrar deneyin.`,
         variant: "destructive",
       });
     }
@@ -279,19 +355,25 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 h-[calc(90vh-12rem)] flex flex-col">
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 md:p-2 pt-6 h-[calc(90vh-12rem)]">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">Yeni Kullanıcı</h2>
+          <h2 className="text-2xl font-semibold">
+            {data ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı'}
+          </h2>
           <p className="text-muted-foreground">
-            Yeni bir sistem kullanıcısı oluşturun
+            {data ? 'Kullanıcı bilgilerini düzenleyin' : 'Yeni bir sistem kullanıcısı oluşturun'}
           </p>
         </div>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          onClick={onClose}
+          onClick={() => {
+            const tabId = data ? `edit-user-${data.UserID}` : 'new-user-form';
+            removeTab(tabId);
+            setActiveTab('users-list');
+          }}
           className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
         >
           <X className="w-4 h-4" />
@@ -324,21 +406,21 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
             </TabsList>
 
             <div className="flex-none flex gap-4">
-          
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-                    if (currentIndex > 0) {
-                      setActivesTab(tabs[currentIndex - 1].id);
-                    }
-                  }}
-                  className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md hover:text-white transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Geri
-                </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+                  if (currentIndex > 0) {
+                    setActivesTab(tabs[currentIndex - 1].id);
+                  }
+                }}
+                className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md hover:text-white transition-all"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Geri
+              </Button>
               <Button
                 type="submit"
                 className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
@@ -360,7 +442,7 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
         </div>
 
         <TabsContent value="personal">
-            <PersonalInfo formData={formData} setFormData={setFormData} efr_tags={efr_tags} />
+          <PersonalInfo formData={formData} setFormData={setFormData} efr_tags={efr_tags} />
         </TabsContent>
 
         <TabsContent value="security">

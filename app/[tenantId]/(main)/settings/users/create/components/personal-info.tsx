@@ -180,82 +180,92 @@ export function PersonalInfo({ formData, setFormData, efr_tags }: PersonalInfoPr
           <div className="space-y-2">
             <Label className="text-sm font-medium">Kategori</Label>
             <Select
-              value={formData.Category?.toString()}
-              onValueChange={(value) =>
-                setFormData({ ...formData, Category: parseInt(value) })
-              }
+              defaultValue="1"
+              value={formData.Category ? formData.Category.toString() : "1"}
+              onValueChange={(value) => {
+                console.log('Selected category:', { 
+                  currentValue: formData.Category,
+                  newValue: value,
+                  numberValue: Number(value),
+                  formData: formData
+                });
+                setFormData(prev => ({
+                  ...prev,
+                  Category: Number(value)
+                }));
+              }}
             >
               <SelectTrigger className="bg-background/50 border-border/50 focus:ring-primary/20 transition-all duration-200">
                 <SelectValue placeholder="Kategori seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={UserCategory.Standart.toString()}>
+                <SelectItem value="1">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Standart
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.CokluSube.toString()}>
+                <SelectItem value="2">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Çoklu Şube
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.BolgeSorumlusu.toString()}>
+                <SelectItem value="3">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Bölge Sorumlusu
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.Yonetici.toString()}>
+                <SelectItem value="4">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Yönetici
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.SuperAdmin.toString()}>
+                <SelectItem value="5">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Süper Admin
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.OpSorumlusu.toString()}>
+                <SelectItem value="6">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Op. Sorumlusu
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.MusteriHizmetleri.toString()}>
+                <SelectItem value="7">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Müşteri Hizmetleri
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.InsanKaynaklari.toString()}>
+                <SelectItem value="8">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     İnsan Kaynakları
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.IsGelistirme.toString()}>
+                <SelectItem value="9">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     İş Geliştirme
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.IT.toString()}>
+                <SelectItem value="10">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     IT
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.Pazarlama.toString()}>
+                <SelectItem value="11">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Pazarlama
                   </div>
                 </SelectItem>
-                <SelectItem value={UserCategory.Sube.toString()}>
+                <SelectItem value="12">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Şube
