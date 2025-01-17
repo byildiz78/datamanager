@@ -1,93 +1,169 @@
 'use client';
 
-import { Store, Globe, Search } from "lucide-react";
+import { Store, Search, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Efr_Users } from "@/pages/api/settings/users/types";
+import { useState } from "react";
 
 interface BranchAccessProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: Efr_Users;
+  setFormData: (data: Efr_Users) => void;
+  selectedFilter: {
+    selectedBranches: Branch[];
+    branches: Branch[];
+  };
 }
 
-export function BranchAccess({ formData, setFormData }: BranchAccessProps) {
+interface Branch {
+  BranchID: string | number;
+  ExternalCode: string;
+  BranchName: string;
+  Region: string;
+}
+
+export function BranchAccess({ formData, setFormData, selectedFilter }: BranchAccessProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBranches, setSelectedBranches] = useState<string[]>(
+    formData.UserBranchs ? formData.UserBranchs.split(",") : []
+  );
+
+  const branches = selectedFilter.selectedBranches.length <= 0
+    ? selectedFilter.branches
+    : selectedFilter.selectedBranches;
+
+  const filteredBranches = branches.filter(
+    (branch) =>
+      branch.BranchName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      branch.ExternalCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      branch.Region?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleBranch = (branchId: string | number) => {
+    const branchIdString = branchId.toString();
+    const newSelectedBranches = selectedBranches.includes(branchIdString)
+      ? selectedBranches.filter((id) => id !== branchIdString)
+      : [...selectedBranches, branchIdString];
+
+    setSelectedBranches(newSelectedBranches);
+    setFormData({
+      ...formData,
+      UserBranchs: newSelectedBranches.join(","),
+    });
+  };
+
+  const selectAllBranches = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const allBranchIds = branches.map((branch) => branch.BranchID.toString());
+    setSelectedBranches(allBranchIds);
+    setFormData({
+      ...formData,
+      UserBranchs: allBranchIds.join(","),
+    });
+  };
+
+  const clearAllBranches = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedBranches([]);
+    setFormData({
+      ...formData,
+      UserBranchs: "",
+    });
+  };
+
   return (
-    <Card className="border-none shadow-lg bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-sm overflow-hidden">
-      <CardContent className="pt-6 relative">
+    <Card className="border-none shadow-lg bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-sm">
+      <CardContent className="pt-6">
         <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Şube Erişimi</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Kullanıcının erişebileceği şubeleri seçin
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={selectAllBranches}
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                Tümünü Seç
+              </button>
+              <span className="text-muted-foreground">•</span>
+              <button
+                type="button"
+                onClick={clearAllBranches}
+                className="text-xs font-medium text-destructive hover:text-destructive/80 transition-colors"
+              >
+                Tümünü Kaldır
+              </button>
+            </div>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              type="search"
-              placeholder="Şubelerde ara..."
+              placeholder="Şube ara..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
             />
           </div>
 
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent hover:scrollbar-thumb-primary/20">
-            {[
-              {
-                id: "01-m1",
-                name: "01 ADANA M1",
-                location: "TÜRKİYE",
-                currency: "TL",
-              },
-              {
-                id: "01-tb",
-                name: "01 ADANA TÜRKMENBAŞI",
-                location: "TÜRKİYE",
-                currency: "TL",
-              },
-              {
-                id: "02-m",
-                name: "02 BURSA",
-                location: "TÜRKİYE",
-                currency: "TL",
-              },
-            ].map((branch) => (
-              <div
-                key={branch.id}
-                className="flex items-center space-x-3 p-4 rounded-lg hover:bg-muted/50 transition-all duration-200 bg-background/40 border border-border/10 hover:border-border/20 group"
-              >
-                <Checkbox
-                  id={branch.id}
-                  checked={formData.branchAccess.includes(branch.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setFormData({
-                        ...formData,
-                        branchAccess: [...formData.branchAccess, branch.id],
-                      });
-                    } else {
-                      setFormData({
-                        ...formData,
-                        branchAccess: formData.branchAccess.filter(
-                          (id: string) => id !== branch.id
-                        ),
-                      });
-                    }
-                  }}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
-                <div className="flex-1">
-                  <Label
-                    htmlFor={branch.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+          <div className="rounded-lg border border-border/50 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="w-[100px]">Kod</TableHead>
+                  <TableHead>Şube Adı</TableHead>
+                  <TableHead>Bölge</TableHead>
+                  <TableHead className="w-[100px] text-right">Seçili</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredBranches.map((branch) => (
+                  <TableRow
+                    key={branch.BranchID}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => toggleBranch(branch.BranchID)}
                   >
-                    <Store className="w-4 h-4 text-primary/80" />
-                    {branch.name}
-                  </Label>
-                  <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2">
-                    <Globe className="w-3 h-3" />
-                    {branch.location}
-                  </p>
-                </div>
-                <div className="text-sm font-medium bg-primary/10 px-3 py-1.5 rounded-lg group-hover:bg-primary/20 transition-colors">
-                  {branch.currency}
-                </div>
-              </div>
-            ))}
+                    <TableCell className="font-medium">{branch.ExternalCode}</TableCell>
+                    <TableCell>{branch.BranchName}</TableCell>
+                    <TableCell>{branch.Region}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${
+                            selectedBranches.includes(branch.BranchID.toString())
+                              ? "bg-primary text-primary-foreground"
+                              : "border border-border"
+                          }`}
+                        >
+                          {selectedBranches.includes(branch.BranchID.toString()) && (
+                            <Check className="w-3 h-3" />
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </CardContent>

@@ -3,18 +3,13 @@
 import { User, Building2, Mail, Phone, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Efr_Users, UserCategory } from "@/pages/api/settings/users/types";
 
 interface PersonalInfoProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: Efr_Users;
+  setFormData: (data: Efr_Users) => void;
 }
 
 export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
@@ -24,29 +19,14 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Adı</Label>
+              <Label className="text-sm font-medium">Ad Soyad</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Kullanıcı adı"
-                  value={formData.name}
+                  placeholder="Ad Soyad"
+                  value={formData.Name}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Soyadı</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Kullanıcı soyadı"
-                  value={formData.surname}
-                  onChange={(e) =>
-                    setFormData({ ...formData, surname: e.target.value })
+                    setFormData({ ...formData, Name: e.target.value })
                   }
                   className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                 />
@@ -59,11 +39,11 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                 <div className="relative w-24">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    value={formData.countryCode}
+                    value={formData.PhoneCode}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        countryCode: e.target.value,
+                        PhoneCode: e.target.value,
                       })
                     }
                     className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
@@ -73,9 +53,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="(5XX) XXX XX XX"
-                    value={formData.phone}
+                    value={formData.PhoneNumber}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData({ ...formData, PhoneNumber: e.target.value })
                     }
                     className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                   />
@@ -92,9 +72,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                 <Input
                   type="email"
                   placeholder="ornek@email.com"
-                  value={formData.email}
+                  value={formData.EMail}
                   onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
+                    setFormData({ ...formData, EMail: e.target.value })
                   }
                   className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                 />
@@ -107,9 +87,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Kullanıcı adı"
-                  value={formData.username}
+                  value={formData.UserName}
                   onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
+                    setFormData({ ...formData, UserName: e.target.value })
                   }
                   className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                 />
@@ -122,9 +102,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Vergi numarası"
-                  value={formData.taxNumber}
+                  value={formData.TaxNo}
                   onChange={(e) =>
-                    setFormData({ ...formData, taxNumber: e.target.value })
+                    setFormData({ ...formData, TaxNo: e.target.value })
                   }
                   className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
                 />
@@ -137,9 +117,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
           <div className="space-y-2">
             <Label className="text-sm font-medium">Ülke</Label>
             <Select
-              value={formData.country}
+              value={formData.DefaultCountry}
               onValueChange={(value) =>
-                setFormData({ ...formData, country: value })
+                setFormData({ ...formData, DefaultCountry: value })
               }
             >
               <SelectTrigger className="bg-background/50 border-border/50 focus:ring-primary/20 transition-all duration-200">
@@ -159,25 +139,85 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
           <div className="space-y-2">
             <Label className="text-sm font-medium">Kategori</Label>
             <Select
-              value={formData.category}
+              value={formData.Category?.toString()}
               onValueChange={(value) =>
-                setFormData({ ...formData, category: value })
+                setFormData({ ...formData, Category: parseInt(value) })
               }
             >
               <SelectTrigger className="bg-background/50 border-border/50 focus:ring-primary/20 transition-all duration-200">
                 <SelectValue placeholder="Kategori seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Standart">
+                <SelectItem value={UserCategory.Standart.toString()}>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Standart
                   </div>
                 </SelectItem>
-                <SelectItem value="Premium">
+                <SelectItem value={UserCategory.CokluSube.toString()}>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    Premium
+                    Çoklu Şube
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.BolgeSorumlusu.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Bölge Sorumlusu
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.Yonetici.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Yönetici
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.SuperAdmin.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Süper Admin
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.OpSorumlusu.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Op. Sorumlusu
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.MusteriHizmetleri.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Müşteri Hizmetleri
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.InsanKaynaklari.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    İnsan Kaynakları
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.IsGelistirme.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    İş Geliştirme
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.IT.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    IT
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.Pazarlama.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Pazarlama
+                  </div>
+                </SelectItem>
+                <SelectItem value={UserCategory.Sube.toString()}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Şube
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -187,9 +227,9 @@ export function PersonalInfo({ formData, setFormData }: PersonalInfoProps) {
           <div className="space-y-2">
             <Label className="text-sm font-medium">Durum</Label>
             <Select
-              value={formData.status}
+              value={formData.IsActive ? "Aktif" : "Pasif"}
               onValueChange={(value) =>
-                setFormData({ ...formData, status: value })
+                setFormData({ ...formData, IsActive: value === "Aktif" })
               }
             >
               <SelectTrigger className="bg-background/50 border-border/50 focus:ring-primary/20 transition-all duration-200">
