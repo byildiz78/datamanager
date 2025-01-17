@@ -17,22 +17,36 @@ export function useTab() {
     });
 
     const handleTabOpen = (id: string, title: string) => {
+        const currentFilter = useFilterStore.getState().selectedFilter;
         const existingTab = useTabStore.getState().tabs.find(tab => tab.id === id);
+        
         if (existingTab) {
             useTabStore.getState().setActiveTab(id);
-            // Mevcut tab'ın filtresini al ve global state'e uygula
+            // Get existing tab's filter but preserve current branch selection
             const tabFilter = useTabStore.getState().getTabFilter(id);
             if (tabFilter) {
-                setFilter(tabFilter);
+                setFilter({
+                    ...tabFilter,
+                    branches: currentFilter.branches,
+                    selectedBranches: currentFilter.selectedBranches
+                });
             } else {
-                // Eğer tab'ın filtresi yoksa yeni bir filtre oluştur
-                const newFilter = getDefaultFilter();
+                // If tab has no filter, create new one with current branch selection
+                const newFilter = {
+                    ...getDefaultFilter(),
+                    branches: currentFilter.branches,
+                    selectedBranches: currentFilter.selectedBranches
+                };
                 useTabStore.getState().setTabFilter(id, newFilter);
                 setFilter(newFilter);
             }
         } else {
-            // Yeni tab için varsayılan filtreyi ayarla
-            const defaultFilter = getDefaultFilter();
+            // For new tab, create default filter but preserve branch selection
+            const defaultFilter = {
+                ...getDefaultFilter(),
+                branches: currentFilter.branches,
+                selectedBranches: currentFilter.selectedBranches
+            };
             
             addTab({
                 id,

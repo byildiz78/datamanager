@@ -1,12 +1,15 @@
 'use client';
 
+import { Lock, Shield, Bell, Mail, MessageSquare, LayoutDashboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { Efr_Users } from "@/pages/api/settings/users/types";
 
 interface SecurityInfoProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: Efr_Users;
+  setFormData: (data: Efr_Users) => void;
   passwordRules: {
     length: boolean;
     lowercase: boolean;
@@ -23,54 +26,224 @@ export function SecurityInfo({
   passwordRules,
   checkPasswordRules,
 }: SecurityInfoProps) {
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPassword = e.target.value;
-    setFormData({ ...formData, password: newPassword });
-    checkPasswordRules(newPassword);
-  };
-
-  const rules = [
-    { key: "length", text: "En az 8 karakter" },
-    { key: "lowercase", text: "En az 1 küçük harf" },
-    { key: "uppercase", text: "En az 1 büyük harf" },
-    { key: "number", text: "En az 1 rakam" },
-    { key: "symbol", text: "En az 1 özel karakter" },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="password">Şifre</Label>
-          <Input
-            id="password"
-            type="password"
-            value={formData.password}
-            onChange={handlePasswordChange}
-            className="w-full"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          {rules.map((rule) => (
-            <div
-              key={rule.key}
-              className={`flex items-center gap-2 p-3 rounded-lg transition-all duration-300 ${
-                passwordRules[rule.key as keyof typeof passwordRules]
-                  ? "bg-green-500/10 text-green-700"
-                  : "bg-red-500/10 text-red-700"
-              }`}
-            >
-              {passwordRules[rule.key as keyof typeof passwordRules] ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <X className="w-4 h-4 text-red-600" />
-              )}
-              <span className="text-sm font-medium">{rule.text}</span>
+    <Card className="border-none shadow-lg bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-sm">
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Şifre</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.EncryptedPass}
+                  onChange={(e) => {
+                    setFormData({ ...formData, EncryptedPass: e.target.value });
+                    checkPasswordRules(e.target.value);
+                  }}
+                  className="pl-10 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordRules.length
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    En az 8 karakter
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordRules.uppercase
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Büyük harf (A-Z)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordRules.lowercase
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Küçük harf (a-z)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordRules.number
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Rakam (0-9)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordRules.symbol
+                        ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Özel karakter (!@#$%^&*)
+                  </span>
+                </div>
+              </div>
             </div>
-          ))}
+
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Şifre Değiştirme</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Kullanıcının şifre değiştirmesini engelle
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.PwdCantChange}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, PwdCantChange: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">SMS Doğrulama</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Giriş için SMS doğrulaması gerekli
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.SmsRequired}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, SmsRequired: checked })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Bildirimler</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Bildirim ayarlarını devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableNotification}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, DisableNotification: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Mail Ayarları</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Mail ayarlarını devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableMailSettings}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, DisableMailSettings: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Şube Mesajları</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Şube mesajlarını devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableBranchMessage}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, DisableBranchMessage: checked })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Kontrol Formu</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Şube kontrol formunu devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableBranchControlForm}
+                  onCheckedChange={(checked) =>
+                    setFormData({
+                      ...formData,
+                      DisableBranchControlForm: checked,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Dashboard</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Dashboard raporlarını devre dışı bırak
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.DisableDashboardReport}
+                  onCheckedChange={(checked) =>
+                    setFormData({
+                      ...formData,
+                      DisableDashboardReport: checked,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

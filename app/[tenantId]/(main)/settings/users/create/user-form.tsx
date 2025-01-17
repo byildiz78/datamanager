@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { User, Shield, Store, FileText, Save, X } from "lucide-react";
+import { User, Shield, Store, FileText, Save, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -9,39 +9,40 @@ import { PersonalInfo } from "./components/personal-info";
 import { SecurityInfo } from "./components/security-info";
 import { BranchAccess } from "./components/branch-access";
 import { Permissions } from "./components/permissions";
+import { Efr_Users, UserCategory } from "@/pages/api/settings/users/types";
+import { useFilterStore } from "@/stores/filters-store";
 
 interface UserFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Efr_Users) => void;
   onClose: () => void;
-  selectedUser?: any;
+  selectedUser?: Efr_Users;
 }
 
 export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
-  const [formData, setFormData] = useState({
-    name: selectedUser?.name || "",
-    surname: selectedUser?.surname || "",
-    countryCode: "+90",
-    phone: selectedUser?.phone || "",
-    email: selectedUser?.email || "",
-    username: selectedUser?.username || "",
-    password: "",
-    country: "Türkiye",
-    category: "Standart",
-    branchAccess: [],
-    taxNumber: "",
-    status: "Aktif",
-    permissions: {
-      canViewNotifications: false,
-      canAccessEmail: false,
-      canAccessLanguageEditor: false,
-      canAccessBranchMessages: false,
-      canAccessBranchForms: false,
-      canViewAllBranches: false,
-      requiresSMSVerification: false,
-      canViewDashboard: false,
-      canChangePassword: false,
-      isTicketUser: false,
-    }
+  const { selectedFilter } = useFilterStore();
+  const [formData, setFormData] = useState<Efr_Users>({
+    UserName: selectedUser?.UserName || "",
+    Name: selectedUser?.Name || "",
+    PhoneCode: selectedUser?.PhoneCode || "+90",
+    PhoneNumber: selectedUser?.PhoneNumber || "",
+    EMail: selectedUser?.EMail || "",
+    EncryptedPass: "",
+    DefaultCountry: selectedUser?.DefaultCountry || "Türkiye",
+    Category: selectedUser?.Category || UserCategory.Standart,
+    UserBranchs: selectedUser?.UserBranchs || "",
+    TaxNo: selectedUser?.TaxNo || "",
+    IsActive: selectedUser?.IsActive ?? true,
+    DisableNotification: selectedUser?.DisableNotification || false,
+    DisableMailSettings: selectedUser?.DisableMailSettings || false,
+    DisableLangaugeEditor: selectedUser?.DisableLangaugeEditor || false,
+    DisableBranchMessage: selectedUser?.DisableBranchMessage || false,
+    DisableBranchControlForm: selectedUser?.DisableBranchControlForm || false,
+    DisableDashboardReport: selectedUser?.DisableDashboardReport || false,
+    SmsRequired: selectedUser?.SmsRequired || false,
+    PwdCantChange: selectedUser?.PwdCantChange || false,
+    TicketUser: selectedUser?.TicketUser || false,
+    ExpoToken: "",
+    ExpoTokenUpdatedDate: new Date(),
   });
 
   const [activeTab, setActiveTab] = useState("personal");
@@ -66,6 +67,13 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (activeTab !== "permissions") {
+      const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+      if (currentIndex < tabs.length - 1) {
+        setActiveTab(tabs[currentIndex + 1].id);
+      }
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -93,8 +101,8 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="flex items-center justify-between mb-6">
+    <form onSubmit={handleSubmit} className="space-y-4 h-[calc(90vh-12rem)] flex flex-col">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Yeni Kullanıcı</h2>
           <p className="text-muted-foreground">
@@ -112,8 +120,8 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start mb-8 bg-gradient-to-b from-background/95 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-xl p-1.5 shadow-lg">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-grow">
+        <TabsList className="w-full justify-start mb-4 bg-gradient-to-b from-background/95 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-xl p-1.5 shadow-lg">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.id}
@@ -135,29 +143,53 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
           ))}
         </TabsList>
 
-        <TabsContent value="personal">
-          <PersonalInfo formData={formData} setFormData={setFormData} />
-        </TabsContent>
+          <TabsContent value="personal">
+            <PersonalInfo formData={formData} setFormData={setFormData} />
+          </TabsContent>
 
-        <TabsContent value="security">
-          <SecurityInfo
-            formData={formData}
-            setFormData={setFormData}
-            passwordRules={passwordRules}
-            checkPasswordRules={checkPasswordRules}
-          />
-        </TabsContent>
+          <TabsContent value="security">
+            <SecurityInfo 
+              formData={formData} 
+              setFormData={setFormData}
+              passwordRules={passwordRules}
+              checkPasswordRules={checkPasswordRules}
+            />
+          </TabsContent>
 
-        <TabsContent value="branches">
-          <BranchAccess formData={formData} setFormData={setFormData} />
-        </TabsContent>
+          <TabsContent value="branches">
+            <div className="h-[calc(65vh-12rem)] overflow-y-auto
+              [&::-webkit-scrollbar]:w-2
+              [&::-webkit-scrollbar-thumb]:bg-gray-300/50
+              [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-track]:bg-transparent
+              dark:[&::-webkit-scrollbar-thumb]:bg-gray-700/50
+              hover:[&::-webkit-scrollbar-thumb]:bg-gray-300/80
+              dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700/80
+            ">
+              <BranchAccess 
+                formData={formData} 
+                setFormData={setFormData}
+                selectedFilter={selectedFilter}
+              />
+            </div>
+          </TabsContent>
 
-        <TabsContent value="permissions">
-          <Permissions formData={formData} setFormData={setFormData} />
-        </TabsContent>
+          <TabsContent value="permissions">
+            <div className="h-[calc(65vh-12rem)] overflow-y-auto
+              [&::-webkit-scrollbar]:w-2
+              [&::-webkit-scrollbar-thumb]:bg-gray-300/50
+              [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-track]:bg-transparent
+              dark:[&::-webkit-scrollbar-thumb]:bg-gray-700/50
+              hover:[&::-webkit-scrollbar-thumb]:bg-gray-300/80
+              dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700/80
+            ">
+              <Permissions formData={formData} setFormData={setFormData} />
+            </div>
+          </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end gap-4 mt-8">
+      <div className="flex justify-end gap-4 mt-auto pt-4">
         <Button
           type="button"
           variant="outline"
@@ -170,8 +202,17 @@ export function UserForm({ onSubmit, onClose, selectedUser }: UserFormProps) {
           type="submit"
           className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
         >
-          <Save className="w-4 h-4 mr-2" />
-          Kaydet
+          {activeTab !== "permissions" ? (
+            <>
+              İleri
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Kaydet
+            </>
+          )}
         </Button>
       </div>
     </form>
