@@ -43,6 +43,7 @@ export type Efr_Users = {
     MinDiscountAmount?: number;
     MinCancelAmount?: number;
     MinSaleAmount?: number;
+    TagID?: number; // Added for branch tag selection
 }
 
 // Category için enum tanımı (opsiyonel kullanım için)
