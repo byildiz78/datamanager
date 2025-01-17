@@ -19,6 +19,7 @@ import { toast } from "@/components/ui/toast/use-toast";
 import { useRouter } from "next/navigation";
 import { encrypt } from "@/pages/api/auth/login";
 import { useTabStore } from "@/stores/tab-store";
+import { useUsersStore } from "@/stores/settings/users/users-store";
 
 interface UserFormProps {
   onClose: () => void;
@@ -28,6 +29,7 @@ interface UserFormProps {
 export function UserForm({ onClose, selectedUser }: UserFormProps) {
   const router = useRouter();
   const { selectedFilter } = useFilterStore();
+  const { addUser } = useUsersStore();
   const [webreportMenuItems, setWebreportMenuItems] = React.useState<RawReportData[]>([]);
   const [efr_tags, setEfr_tags] = React.useState<Efr_Tags[]>([]);
   const { removeTab, setActiveTab} = useTabStore();
@@ -167,6 +169,29 @@ export function UserForm({ onClose, selectedUser }: UserFormProps) {
       const response = await axios.post('/api/settings/users/settings_efr_users_create', dataToSend);
       
       if (response.data.success) {
+        // Store'a yeni kullanıcıyı ekle
+        const categoryMap: { [key: number]: string } = {
+          1: 'Standart',
+          2: 'Çoklu Şube',
+          3: 'Bölge Sorumlusu',
+          4: 'Yönetici',
+          5: 'Süper Admin',
+          6: 'Op. Sorumlusu',
+          7: 'Müşteri Hizmetleri',
+          8: 'İnsan Kaynakları',
+          9: 'İş Geliştirme',
+          10: 'IT',
+          11: 'Pazarlama',
+          12: 'Şube'
+        };
+
+        addUser({
+          ...dataToSend,
+          UserID: response.data.userId,
+          Category: categoryMap[dataToSend.Category as number] || 'Bilinmiyor',
+          Name: `${dataToSend.Name} ${dataToSend.SurName}`
+        });
+
         toast({
           title: (
             <div className="flex items-center gap-2">
