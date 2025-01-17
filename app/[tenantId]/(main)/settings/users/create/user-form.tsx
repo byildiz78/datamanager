@@ -28,8 +28,7 @@ interface UserFormProps {
 }
 
 export default function UserForm(props: UserFormProps) {
-  const { onClose, data } = props;
-  const router = useRouter();
+  const { data } = props;
   const { selectedFilter } = useFilterStore();
   const { addUser, updateUser } = useUsersStore();
   const [webreportMenuItems, setWebreportMenuItems] = React.useState<RawReportData[]>([]);
@@ -135,52 +134,38 @@ export default function UserForm(props: UserFormProps) {
   };
 
   const validateForm = () => {
-    // Zorunlu alanları kontrol et
-    const requiredFields = {
-      UserName: "Kullanıcı Adı",
-      Name: "Ad",
-      SurName: "Soyad",
-      EncryptedPass: "Şifre",
-      EMail: "E-posta",
-      PhoneNumber: "Telefon Numarası",
-    };
-
-    const errors: string[] = [];
-
-    // Boş alan kontrolü
-    Object.entries(requiredFields).forEach(([field, label]) => {
-      if (!formData[field as keyof Efr_Users]) {
-        errors.push(`${label} alanı zorunludur`);
-      }
-    });
-
-    // E-posta formatı kontrolü
-    if (formData.EMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.EMail)) {
-      errors.push("Geçerli bir e-posta adresi giriniz");
-    }
-
-    // Şifre kuralları kontrolü
-    if (formData.EncryptedPass && !Object.values(passwordRules).every(rule => rule)) {
-      errors.push("Şifre, belirlenen kurallara uygun olmalıdır");
-    }
-
-    // Telefon numarası kontrolü
-    if (formData.PhoneNumber && !/^\d{10}$/.test(formData.PhoneNumber.replace(/\D/g, ''))) {
-      errors.push("Geçerli bir telefon numarası giriniz");
-    }
-
-    if (errors.length > 0) {
+    if (!formData.UserName) {
       toast({
         title: "Hata!",
-        description: (
-          <div className="space-y-2">
-            {errors.map((error, index) => (
-              <p key={index} className="text-sm text-white">
-                • {error}
-              </p>
-            ))}
-          </div>
-        ),
+        description: "Kullanıcı adı boş olamaz.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.Name) {
+      toast({
+        title: "Hata!",
+        description: "İsim boş olamaz.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Şifre kontrolü sadece yeni kullanıcı için
+    if (!data && !formData.EncryptedPass) {
+      toast({
+        title: "Hata!",
+        description: "Şifre alanı boş olamaz.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.EMail) {
+      toast({
+        title: "Hata!",
+        description: "E-posta adresi boş olamaz.",
         variant: "destructive",
       });
       return false;
@@ -206,11 +191,11 @@ export default function UserForm(props: UserFormProps) {
     try {
       const dataToSend = {
         ...formData,
-        Category: formData.Category // Kategori numarasını gönder
+        Category: formData.Category
       };
 
-      // Şifre kontrolü ve şifreleme
-      if (!data || formData.EncryptedPass) {
+      if (!data) {
+        // Yeni kullanıcı oluşturma
         const encryptedPass = encrypt(formData.EncryptedPass || '');
         if (!encryptedPass) {
           toast({
@@ -220,10 +205,21 @@ export default function UserForm(props: UserFormProps) {
           });
           return;
         }
-        dataToSend.EncryptedPass = encryptedPass;
-        dataToSend.UserPWD = encryptedPass;
+        dataToSend.UserPWD = encryptedPass?.toString();
+        dataToSend.EncryptedPass = encryptedPass?.toString();
+      } else {
+        // Mevcut kullanıcı
+        if (formData.EncryptedPass) {
+          // Şifre girilmişse güncelle
+          const encryptedPass = encrypt(formData.EncryptedPass);
+          dataToSend.UserPWD = encryptedPass?.toString();
+          dataToSend.EncryptedPass = encryptedPass?.toString();
+        } else {
+          // Şifre girilmemişse mevcut şifreleri koru
+          dataToSend.UserPWD = data.UserPWD;
+          dataToSend.EncryptedPass = data.EncryptedPass;
+        }
       }
-
       // API endpoint ve method seçimi
       const endpoint = data
         ? '/api/settings/users/settings_efr_users_update'

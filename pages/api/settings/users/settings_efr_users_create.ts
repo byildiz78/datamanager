@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Dataset } from '@/pages/api/dataset';
 import { Efr_Users } from './types';
-import { query } from 'mssql';
 import crypto from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -41,13 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         let userBranches = new Set<string>();
-
-        // Add directly selected branches if any
         if (userData.UserBranchs) {
             userData.UserBranchs.split(',').forEach(branch => userBranches.add(branch.trim()));
         }
-
-        // If TagID is provided, add branches from tag
         if (userData.TagID) {
             const branchResult = await instance.executeQuery({
                 query: `
@@ -71,10 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         }
 
-        // Convert Set back to comma-separated string
         const finalUserBranches = Array.from(userBranches).join(',');
-
-        // Execute everything in a single transaction
         const result = await instance.executeQuery({
             query: `
                 DECLARE @InsertedID INT;
@@ -152,11 +144,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             parameters: {
                 UserName: userData.UserName,
                 EncryptedPass: userData.EncryptedPass,
-                UserPWD: userData.UserPWD, // Artık client'tan şifrelenmiş olarak geliyor
+                UserPWD: userData.UserPWD,
                 Category: userData.Category,
                 UserBranchs: finalUserBranches,
                 DefaultCountry: userData.DefaultCountry || 'Türkiye',
-                LanguageName: 'tr', // Default language
+                LanguageName: 'tr',
                 HiddenReports: userData.HiddenReports || '',
                 DisableNotification: userData.DisableNotification ? 1 : 0,
                 DisableLangaugeEditor: userData.DisableLangaugeEditor ? 1 : 0,
