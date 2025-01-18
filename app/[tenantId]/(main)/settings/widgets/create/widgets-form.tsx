@@ -103,6 +103,7 @@ export default function WidgetForm(props: WidgetFormProps) {
 
         const userData = {
           ...formData,
+          AutoID: data ? formData.AutoID : response.data.autoId // Yeni kayıt için API'den gelen AutoID'yi kullan
         };
 
         if (data) {

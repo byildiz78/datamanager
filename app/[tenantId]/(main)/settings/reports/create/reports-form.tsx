@@ -103,6 +103,7 @@ export default function ReportForm(props: ReportFormProps) {
 
         const userData = {
           ...formData,
+          AutoID: data ? formData.AutoID : response.data.autoId // Yeni kayıt için API'den gelen AutoID'yi kullan
         };
 
         // Store güncelleme
