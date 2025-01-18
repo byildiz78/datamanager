@@ -136,7 +136,7 @@ export default function BranchForm(props: BranchFormProps) {
           duration: 5000,
         });
 
-        const tabId = data ? `edit-branch-${data.BranchID}` : 'new-branch-form';
+        const tabId = data ? `edit-branches-${data.BranchID}` : 'new-branches-form';
         removeTab(tabId);
         setActiveTab('branches-list');
       } else {

@@ -13,22 +13,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         const instance = Dataset.getInstance();
         const branchData: Efr_Branches = req.body;
+        const referer = req.headers.referer;
+        const tenantId = referer ? new URL(referer).pathname.split('/')[1] : '';
         const tagIds = branchData.TagIDs || [];
 
-        if (!branchData) {
+        // Validasyon kontrolü
+        const validation = validateBranchData(branchData);
+        if (!validation.isValid) {
             return res.status(400).json({
                 success: false,
-                message: 'Branch data is required'
+                message: validation.message
             });
         }
 
         // BranchID kontrolü
         const checkBranchResult = await instance.executeQuery({
             query: `
-                SELECT BranchID 
-                FROM efr_Branchs 
-                WHERE BranchID = @BranchID
-            `,
+                    SELECT BranchID 
+                    FROM efr_Branchs 
+                    WHERE BranchID = @BranchID
+                    `,
             parameters: {
                 BranchID: branchData.BranchID
             },
@@ -39,12 +43,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (checkBranchResult && checkBranchResult.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: `Bu Şube ID (${branchData.BranchID}) zaten kullanılıyor. Lütfen başka bir ID giriniz.`
+                message: `Bu Şube ID ( ${branchData.BranchName} ) şubesinde zaten kullanılıyor. Lütfen başka bir ID giriniz.`
             });
         }
 
-        const referer = req.headers.referer;
-        const tenantId = referer ? new URL(referer).pathname.split('/')[1] : '';
+
 
         // İlk olarak branch insert et
         const result = await instance.executeQuery({
@@ -70,15 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     @CpmBranchID, @OrderNumber, @OfficeID, @BranchReportOrder, @ParentBranchID,
                     @WebMails, @InvestorMail, @BranchMenuCode, @RegionalDirectorMail, @RegionalManagerMail
                 );
-
-                -- Eğer tag varsa insert et
-                IF EXISTS (SELECT 1 FROM STRING_SPLIT(@TagIDs, ',') WHERE RTRIM(value) <> '')
-                BEGIN
-                    INSERT INTO efr_BranchTags (BranchID, TagID)
-                    SELECT @InsertedID, CAST(value AS INT)
-                    FROM STRING_SPLIT(@TagIDs, ',')
-                    WHERE RTRIM(value) <> '';
-                END
 
                 SELECT @InsertedID as BranchID;
             `,
@@ -121,17 +115,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 InvestorMail: branchData.InvestorMail || null,
                 BranchMenuCode: branchData.BranchMenuCode || null,
                 RegionalDirectorMail: branchData.RegionalDirectorMail || null,
-                RegionalManagerMail: branchData.RegionalManagerMail || null,
-                TagIDs: tagIds.join(',')
+                RegionalManagerMail: branchData.RegionalManagerMail || null
             },
             tenantId,
             req
         });
 
+        // Tag'leri ekle
+        if (tagIds.length > 0) {
+            const tagPromises = tagIds.map(tagId =>
+                instance.executeQuery({
+                    query: `
+                        INSERT INTO efr_BranchTags (BranchID, TagID)
+                        VALUES (@BranchID, @TagID)
+                    `,
+                    parameters: {
+                        BranchID: branchData.BranchID,
+                        TagID: tagId
+                    },
+                    tenantId,
+                    req
+                })
+            );
+
+            await Promise.all(tagPromises);
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Branch created successfully',
-            branchId: result[0]?.BranchID || branchData.BranchID
+            branchId: result[0]?.BranchID
         });
 
     } catch (error) {
@@ -146,3 +159,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
     }
 }
+
+// Validasyon fonksiyonu
+const validateBranchData = (branchData: Efr_Branches) => {
+    if (!branchData) {
+        return {
+            isValid: false,
+            message: 'Branch data is required'
+        };
+    }
+
+    // Zorunlu alan kontrolleri
+    const requiredFields = {
+        BranchID: 'Şube ID',
+        BranchName: 'Şube Adı',
+        CountryName: 'Ülke Adı',
+        CurrencyName: 'Para Birimi'
+    };
+
+    const missingFields = Object.entries(requiredFields)
+        .filter(([field]) => !branchData[field])
+        .map(([, label]) => label);
+
+    if (missingFields.length > 0) {
+        return {
+            isValid: false,
+            message: `Lütfen zorunlu alanları doldurunuz: ${missingFields.join(', ')}`
+        };
+    }
+
+    // BranchID 0 kontrolü
+    if (branchData.BranchID == 0) {
+        return {
+            isValid: false,
+            message: 'Şube ID değeri 0 olamaz'
+        };
+    }
+
+    return { isValid: true };
+};
