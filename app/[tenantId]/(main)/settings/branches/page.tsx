@@ -1,66 +1,74 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Pencil, Trash2, MapPin, Building2, Phone, Globe } from 'lucide-react';
+import { UserPlus, Pencil, Plus, BarChart3, Folder, FileText, Laptop, Smartphone, Shield, Building2, MapPin, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/common';
 import { useTabStore } from "@/stores/tab-store";
-import axios, { isAxiosError } from "@/lib/axios";
+import axios from "@/lib/axios";
+import { toast } from '@/components/ui/toast/use-toast';
 import { Efr_Branches } from '@/pages/api/settings/branches/types';
+import { useBranchesStore } from '@/stores/settings/branch/branch-store';
+import TagDialog from './components/tag-dialog';
 
 export default function BranchPage() {
-  const [branches, setBranches] = React.useState<Efr_Branches[]>([]);
-  const { addTab, setActiveTab } = useTabStore();
+  const { branches, setBranches } = useBranchesStore();
+  const { addTab, setActiveTab, removeTab } = useTabStore();
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isTagDialogOpen, setIsTagDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     const fetchBranches = async () => {
       try {
         setIsLoading(true);
-        const { data } = await axios.get('/api/settings/branches/settings_efr_branches');
-        setBranches(data);
+        const response = await axios.get('/api/settings/branches/settings_efr_branches');
+        setBranches(response.data);
       } catch (error) {
         console.error('Error fetching branches:', error);
-        if (isAxiosError(error)) {
-          console.error('Axios error:', error.response?.data);
-        }
+        toast({
+          title: "Hata!",
+          description: "Şubeler yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
-  
+
     fetchBranches();
-  }, []);
+  }, [setBranches]);
+
+  React.useEffect(() => {
+    if (isTagDialogOpen) {
+      // fetchTags();
+    }
+  }, [isTagDialogOpen]);
 
   const handleEditBranch = (branch: Efr_Branches) => {
-    // TODO: Implement edit functionality
-    console.log('Edit branch:', branch);
-  };
-
-  const handleDeleteBranch = (id: number) => {
-    // TODO: Implement delete functionality
-    console.log('Delete branch:', id);
+    const tabId = `edit-branches-${branch.BranchID}`;
+    const tab = {
+      id: tabId,
+      title: `Şube Düzenle - ${branch.BranchName}`,
+      props: { data: branch },
+      lazyComponent: () => import('./create/branch-form').then(module => ({
+        default: (props: any) => {
+          const Component = module.default;
+          const tabProps = useTabStore.getState().getTabProps(tabId);
+          return <Component {...tabProps} />;
+        }
+      }))
+    };
+    addTab(tab);
+    setActiveTab(tabId);
   };
 
   const handleAddBranchClick = () => {
-    const tabId = "new-branch-form";
+    const tabId = "new-branches-form";
     addTab({
       id: tabId,
       title: "Yeni Şube",
-      lazyComponent: () => import("./branch-form").then(mod => ({
-        default: () => (
-          <div className="p-8">
-            <div className="rounded-lg border bg-card p-6">
-              <mod.BranchForm
-                onSubmit={(branchData) => {
-                  setBranches(prev => [...prev, branchData]);
-                  setActiveTab("branches-list");
-                }}
-                onClose={() => setActiveTab("branches-list")}
-              />
-            </div>
-          </div>
-        )
+      lazyComponent: () => import('./create/branch-form').then(module => ({
+        default: (props: any) => <module.default {...props} />
       }))
     });
     setActiveTab(tabId);
@@ -80,11 +88,10 @@ export default function BranchPage() {
               <Building2 className="w-4 h-4 text-primary/40" />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-background shadow-sm flex items-center justify-center ring-1 ring-border/50">
-              <div className={`w-2 h-2 rounded-full ${
-                branch.IsActive 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse' 
+              <div className={`w-2 h-2 rounded-full ${branch.IsActive
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse'
                   : 'bg-gradient-to-r from-gray-400 to-gray-500'
-              }`} />
+                }`} />
             </div>
           </div>
           <div className="flex flex-col">
@@ -141,15 +148,14 @@ export default function BranchPage() {
       sortable: true,
       render: (branch: Efr_Branches) => (
         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium
-          ${branch.IsActive 
-            ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20' 
+          ${branch.IsActive
+            ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20'
             : 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-600 ring-1 ring-gray-500/20'}`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            branch.IsActive 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-[pulse_2s_ease-in-out_infinite]' 
+          <span className={`w-1.5 h-1.5 rounded-full ${branch.IsActive
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 animate-[pulse_2s_ease-in-out_infinite]'
               : 'bg-gradient-to-r from-gray-400 to-gray-500'
-          }`} />
+            }`} />
           {branch.IsActive ? 'Aktif' : 'Pasif'}
         </span>
       )
@@ -201,13 +207,19 @@ export default function BranchPage() {
             Şubeleri görüntüleyin ve yönetin
           </p>
         </div>
-        <Button 
-          onClick={handleAddBranchClick}
-          className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Yeni Şube
-        </Button>
+        <div className="flex gap-2">
+          <TagDialog 
+            isOpen={isTagDialogOpen}
+            onOpenChange={setIsTagDialogOpen}
+          />
+          <Button
+            onClick={handleAddBranchClick}
+            className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Yeni Şube
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -217,25 +229,16 @@ export default function BranchPage() {
         searchFields={['BranchName', 'ExternalCode', 'Addresss', 'Region']}
         idField="BranchID"
         isLoading={isLoading}
-        renderActions={(branch) => (
+        renderActions={(branches) => (
           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 hover:scale-105 hover:bg-violet-500/10 hover:text-violet-600 transition-all"
-              onClick={() => handleEditBranch(branch)}
+              onClick={() => handleEditBranch(branches)}
             >
               <Pencil className="w-4 h-4" />
               <span className="sr-only">Düzenle</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
-              onClick={() => handleDeleteBranch(branch.BranchID)}
-            >
-              <Trash2 className="w-4 h-4" />
-              <span className="sr-only">Sil</span>
             </Button>
           </div>
         )}
