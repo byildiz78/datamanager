@@ -40,33 +40,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         let userBranches = new Set<string>();
-        if (userData.UserBranchs) {
-            userData.UserBranchs.split(',').forEach(branch => userBranches.add(branch.trim()));
-        }
-        if (userData.TagID) {
-            const branchResult = await instance.executeQuery({
-                query: `
-                    SELECT
-                        b.BranchID 
-                    FROM
-                        efr_Branchs AS b
-                        INNER JOIN efr_BranchTags AS t ON b.BranchID = t.BranchID 
-                    WHERE
-                        t.TagID = @TagID
-                `,
-                parameters: { 
-                    TagID: userData.TagID
-                },
-                tenantId,
-                req
-            });
+        if (userData.Category !== 5) { // Süper Admin değilse şubeleri ekle
+            if (userData.UserBranchs) {
+                userData.UserBranchs.split(',').forEach(branch => userBranches.add(branch.trim()));
+            }
+            if (userData.TagID) {
+                const branchResult = await instance.executeQuery({
+                    query: `
+                        SELECT
+                            b.BranchID 
+                        FROM
+                            efr_Branchs AS b
+                            INNER JOIN efr_BranchTags AS t ON b.BranchID = t.BranchID 
+                        WHERE
+                            t.TagID = @TagID
+                    `,
+                    parameters: { 
+                        TagID: userData.TagID
+                    },
+                    tenantId,
+                    req
+                });
 
-            if (branchResult && branchResult.length > 0) {
-                branchResult.forEach(branch => userBranches.add(branch.BranchID.toString()));
+                if (branchResult && branchResult.length > 0) {
+                    branchResult.forEach(branch => userBranches.add(branch.BranchID.toString()));
+                }
             }
         }
 
-        const finalUserBranches = Array.from(userBranches).join(',');
+        const finalUserBranches = userData.Category === 5 ? "0" : Array.from(userBranches).join(',');
         const result = await instance.executeQuery({
             query: `
                 DECLARE @InsertedID INT;
