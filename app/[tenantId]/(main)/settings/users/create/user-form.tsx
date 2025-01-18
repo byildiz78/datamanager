@@ -346,7 +346,7 @@ export default function UserForm(props: UserFormProps) {
     {
       id: "permissions",
       icon: FileText,
-      label: "İzinler"
+      label: "Rapor İzinleri"
     }
   ];
 

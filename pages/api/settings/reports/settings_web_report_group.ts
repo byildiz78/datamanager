@@ -22,29 +22,13 @@ export default async function handler(
         const instance = Dataset.getInstance();
         const listQuery = `
             SELECT
-  g.AutoID AS GroupAutoID,
-  g.GroupName,
-  g.DisplayOrderID AS GroupDisplayOrderID,
-  g.SecurityLevel AS GroupSecurityLevel,
-  g.Icon AS GroupIcon,
-  i.AutoID,
-  i.ReportID,
-  i.GroupID,
-  i.ReportName,
-  i.ReportType,
-  i.ShowDesktop,
-  i.ShowMobile,
-  i.DisplayOrderID,
-  i.SecurityLevel,
-  i.ReportQuery,
-  i.QueryDayLimit,
-  i.ReportIcon 
-FROM
-  dm_infiniaWebReports i WITH (NOLOCK)
-  INNER JOIN dm_infiniaWebReportGroups2 AS g WITH (NOLOCK) ON i.GroupID = g.AutoID 
-ORDER BY
-  g.DisplayOrderID,
-  i.DisplayOrderID
+            AutoID AS GroupAutoID,
+            GroupName AS GroupName,
+            DisplayOrderID AS GroupDisplayOrderID,
+            SecurityLevel AS GroupSecurityLevel,
+            Icon AS GroupIcon
+            FROM
+            dm_infiniaWebReportGroups2 WITH (NOLOCK)
         `;
 
         const result = await instance.executeQuery<QueryResult[]>({

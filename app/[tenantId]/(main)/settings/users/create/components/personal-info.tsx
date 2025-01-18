@@ -183,12 +183,6 @@ export function PersonalInfo({ formData, setFormData, efr_tags }: PersonalInfoPr
               defaultValue="1"
               value={formData.Category ? formData.Category.toString() : "1"}
               onValueChange={(value) => {
-                console.log('Selected category:', { 
-                  currentValue: formData.Category,
-                  newValue: value,
-                  numberValue: Number(value),
-                  formData: formData
-                });
                 setFormData(prev => ({
                   ...prev,
                   Category: Number(value)
