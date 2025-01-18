@@ -35,6 +35,10 @@ export default function BranchInfo({ formData, setFormData, efr_tags, isLoading 
     setFormData(prev => ({ ...prev, TagIDs: newSelectedTags }));
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Sol Taraf - Form Alanları */}
@@ -44,9 +48,10 @@ export default function BranchInfo({ formData, setFormData, efr_tags, isLoading 
             <Label htmlFor="branchId">Şube ID</Label>
             <Input
               id="branchId"
+              type="number"
               placeholder="Şube ID"
               value={formData.BranchID}
-              onChange={(e) => setFormData(prev => ({ ...prev, BranchID: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => handleInputChange('BranchID', e.target.value)}
             />
           </div>
 

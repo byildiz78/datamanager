@@ -54,4 +54,5 @@ export interface Efr_Branches {
   RegionalDirectorMail: string;
   RegionalManagerMail: string;
   TagIDs: string[];
+  TagTitles?: string;
 }

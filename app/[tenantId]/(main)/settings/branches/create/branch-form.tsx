@@ -146,11 +146,11 @@ export default function BranchForm(props: BranchFormProps) {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Hata!",
-        description: `Şube ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu. Lütfen tekrar deneyin.`,
+        description: error.response?.data?.message || `Şube ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu. Lütfen tekrar deneyin.`,
         variant: "destructive",
       });
     }
@@ -159,6 +159,24 @@ export default function BranchForm(props: BranchFormProps) {
   useEffect(() => {
     fetchEfrTags();
   }, []);
+
+  useEffect(() => {
+    if (data && efr_tags?.length > 0 && data.TagTitles) {
+      const tagTitlesArray = data.TagTitles.split(',').filter(tag => tag.trim() !== '');
+      const foundTagIds = tagTitlesArray
+        .map(tagTitle => {
+          const foundTag = efr_tags.find(t => t.TagTitle === tagTitle.trim());
+          return foundTag?.TagID || '';
+        })
+        .filter(id => id !== '');
+
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+        TagIDs: foundTagIds
+      }));
+    }
+  }, [data, efr_tags]);
 
   const fetchEfrTags = React.useCallback(async () => {
     try {

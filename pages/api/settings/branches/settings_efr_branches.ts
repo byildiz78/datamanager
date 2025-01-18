@@ -37,21 +37,29 @@ export default async function handler(
             }
 
             const query = `
-                SELECT DISTINCT b.* 
-                FROM Efr_Branchs b 
-                WHERE b.IsActive = 1 
-                --AND b.CountryName = 'TÜRKİYE' 
-                AND EXISTS (
-                    SELECT 1 
-                    FROM Efr_Users u 
-                    WHERE u.UserID = @userId
-                    AND u.IsActive = 1 
-                    AND (u.Category = 5 OR CHARINDEX(',' + CAST(b.BranchID AS VARCHAR) + ',', ',' + u.UserBranchs + ',') > 0)
-                )
-            `;  
+            SELECT DISTINCT 
+                b.*,
+                STUFF((
+                    SELECT ',' + ef2.TagTitle
+                    FROM efr_BranchTags eb2 
+                    LEFT JOIN efr_Tags ef2 ON ef2.TagID = eb2.TagID
+                    WHERE eb2.BranchID = b.BranchID
+                    FOR XML PATH('')
+                ), 1, 1, '') AS TagTitles
+            FROM Efr_Branchs b 
+            LEFT JOIN efr_BranchTags eb WITH (NOLOCK) ON eb.BranchID = b.BranchID
+            LEFT JOIN efr_Tags ef WITH (NOLOCK) ON ef.TagID = eb.TagID
+            WHERE b.IsActive = 1 
+            AND EXISTS (
+                SELECT 1 
+                FROM Efr_Users u 
+                WHERE u.UserID = @userId
+                AND u.IsActive = 1 
+                AND (u.Category = 5 OR CHARINDEX(',' + CAST(b.BranchID AS VARCHAR) + ',', ',' + u.UserBranchs + ',') > 0))
+            `;
             const instance = Dataset.getInstance();
 
-            const result = await instance.executeQuery<Efr_Branches[]>({
+            const result = await instance.executeQuery<Efr_Branches[]>({    
                 query,
                 parameters: {
                     userId
