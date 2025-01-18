@@ -15,4 +15,5 @@ export type WebWidget = {
     IsActive?: boolean;
     ReportColor?: string;
     ReportType?: string;
+    BranchDetail?: boolean;
 }

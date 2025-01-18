@@ -32,6 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const result = await instance.executeQuery({
             query: `
+
+                DECLARE @InsertedID INT;
+
                 INSERT INTO dm_infiniaWebReports (
                     ReportID,
                     GroupID,
@@ -57,6 +60,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     @ReportIcon,
                     @QueryDayLimit
                 );
+
+                SET @InsertedID = SCOPE_IDENTITY();
+                SELECT @InsertedID as AutoID;
             `,
             parameters: {
                 ReportID: reportData.ReportID,
@@ -77,7 +83,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json({
             success: true,
-            message: 'Report created successfully'
+            message: 'Report created successfully',
+            autoId: result[0].AutoID
         });
 
     } catch (error) {

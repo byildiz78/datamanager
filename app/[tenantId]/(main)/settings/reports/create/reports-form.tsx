@@ -172,7 +172,7 @@ export default function ReportForm(props: ReportFormProps) {
           variant="ghost"
           size="icon"
           onClick={() => {
-            const tabId = data ? `edit-report-${data.ReportID}` : 'new-report-form';
+            const tabId = data ? `edit-reports-${data.ReportID}` : 'new-reports-form';
             removeTab(tabId);
             setActiveTab('reports-list');
           }}
