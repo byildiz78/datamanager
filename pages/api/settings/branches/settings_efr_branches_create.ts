@@ -47,8 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
 
-
-
         // İlk olarak branch insert et
         const result = await instance.executeQuery({
             query: `
@@ -121,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             req
         });
 
-        // Tag'leri ekle
+        // Tag'ları ekle
         if (tagIds.length > 0) {
             const tagPromises = tagIds.map(tagId =>
                 instance.executeQuery({

@@ -110,7 +110,13 @@ export default function BranchForm(props: BranchFormProps) {
 
       if (response.data.success) {
         if (data) {
-          updateBranch(formData);
+          // API'den gelen güncel tag'leri kullan
+          const updatedFormData = {
+            ...formData,
+            TagIDs: response.data.tags?.map((tag: any) => tag.TagID) || [] // Eğer tags boşsa boş array kullan
+          };
+          updateBranch(updatedFormData);
+          setFormData(updatedFormData);
         } else {
           addBranch(formData);
         }
