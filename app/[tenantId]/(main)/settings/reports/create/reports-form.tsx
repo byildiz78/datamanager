@@ -35,6 +35,7 @@ export default function ReportForm(props: ReportFormProps) {
   const { addReport, updateReport } = useReportsStore();
   const [groups, setGroups] = useState<any[]>([]);
   const [editorLoaded, setEditorLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<WebReport>(() => {
     if (data) {
@@ -91,6 +92,7 @@ export default function ReportForm(props: ReportFormProps) {
     e.preventDefault();
 
     try {
+      setIsSaving(true);
       const endpoint = data
         ? '/api/settings/reports/settings_web_reports_update'
         : '/api/settings/reports/settings_web_reports_create';
@@ -154,6 +156,8 @@ export default function ReportForm(props: ReportFormProps) {
         description: `Rapor ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -341,9 +345,22 @@ export default function ReportForm(props: ReportFormProps) {
             </div>
 
             <div className="col-span-12">
-              <Button type="submit" className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all">
-                <Save className="w-4 h-4 mr-2" />
-                Kaydet
+              <Button 
+                type="submit" 
+                className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Kaydet
+                  </>
+                )}
               </Button>
             </div>
 
