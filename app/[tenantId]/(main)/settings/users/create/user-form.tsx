@@ -250,7 +250,7 @@ export default function UserForm(props: UserFormProps) {
 
         const userData = {
           ...dataToSend,
-          UserID: data?.UserID,
+          UserID: data ? formData.UserID : response.data.userId,
           Category: categoryMap[dataToSend.Category as number] || 'Bilinmiyor',
           Name: `${dataToSend.Name} ${dataToSend.SurName}`
         };
