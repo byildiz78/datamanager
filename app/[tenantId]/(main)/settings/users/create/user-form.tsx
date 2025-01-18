@@ -35,6 +35,7 @@ export default function UserForm(props: UserFormProps) {
   const [efr_tags, setEfr_tags] = React.useState<Efr_Tags[]>([]);
   const { removeTab, setActiveTab } = useTabStore();
   const [activeTab, setActivesTab] = useState("personal");
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<Efr_Users>(() => {
     if (data) {
@@ -189,6 +190,7 @@ export default function UserForm(props: UserFormProps) {
     }
 
     try {
+      setIsSaving(true);
       const dataToSend = {
         ...formData,
         Category: formData.Category
@@ -301,6 +303,8 @@ export default function UserForm(props: UserFormProps) {
         description: `Kullanıcı ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu. Lütfen tekrar deneyin.`,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -420,6 +424,7 @@ export default function UserForm(props: UserFormProps) {
               <Button
                 type="submit"
                 className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
+                disabled={activeTab === "permissions" && isSaving}
               >
                 {activeTab !== "permissions" ? (
                   <>
@@ -428,8 +433,17 @@ export default function UserForm(props: UserFormProps) {
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Kaydet
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Kaydediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Kaydet
+                      </>
+                    )}
                   </>
                 )}
               </Button>
