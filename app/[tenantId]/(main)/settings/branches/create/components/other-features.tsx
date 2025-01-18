@@ -46,6 +46,7 @@ export default function OtherFeatures({ formData, setFormData }: OtherFeaturesPr
               <Label htmlFor="branchSquareMeter">Şube M2</Label>
               <Input
                 id="branchSquareMeter"
+                type="number"
                 placeholder="Şube M2"
                 value={formData.BranchSquareMeter}
                 onChange={(e) => setFormData(prev => ({ ...prev, BranchSquareMeter: e.target.value }))}
@@ -55,6 +56,7 @@ export default function OtherFeatures({ formData, setFormData }: OtherFeaturesPr
               <Label htmlFor="numberOfServicePersonnel">Servis Personel Sayısı</Label>
               <Input
                 id="numberOfServicePersonnel"
+                type="number"
                 placeholder="Servis Personel Sayısı"
                 value={formData.NumberOfServicePersonnel}
                 onChange={(e) => setFormData(prev => ({ ...prev, NumberOfServicePersonnel: e.target.value }))}
@@ -123,6 +125,7 @@ export default function OtherFeatures({ formData, setFormData }: OtherFeaturesPr
               <Label htmlFor="orderNumber">Şube Sırası</Label>
               <Input
                 id="orderNumber"
+                type="number"
                 placeholder="Şube Sırası"
                 value={formData.OrderNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, OrderNumber: e.target.value }))}
