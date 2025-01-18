@@ -78,7 +78,8 @@ export default function SettingsPage() {
       icon: Bell,
       color: "bg-yellow-500 dark:bg-yellow-600",
       route: "announcements",
-      tabId: "announcements-list"
+      tabId: "announcements-list",
+      comingSoon: true
     },
     {
       title: "Widget Listesi",
@@ -94,7 +95,8 @@ export default function SettingsPage() {
       icon: Shield,
       color: "bg-red-500 dark:bg-red-600",
       route: "security",
-      tabId: "security-settings"
+      tabId: "security-settings",
+      comingSoon: true
     },
     {
       title: "Rapor Kolon Özellikleri",
@@ -102,7 +104,8 @@ export default function SettingsPage() {
       icon: Database,
       color: "bg-indigo-500 dark:bg-indigo-600",
       route: "report-columns",
-      tabId: "report-columns-list"
+      tabId: "report-columns-list",
+      comingSoon: true
     },
     {
       title: "Denetim Formu Yetkileri",
@@ -110,7 +113,8 @@ export default function SettingsPage() {
       icon: Settings,
       color: "bg-cyan-500 dark:bg-cyan-600",
       route: "audit-permissions",
-      tabId: "audit-permissions-list"
+      tabId: "audit-permissions-list",
+      comingSoon: true
     },
     {
       title: "Proje Ayarları",
@@ -118,11 +122,14 @@ export default function SettingsPage() {
       icon: Workflow,
       color: "bg-orange-500 dark:bg-orange-600",
       route: "project",
-      tabId: "project-settings"
+      tabId: "project-settings",
+      comingSoon: true
     }
   ];
 
   const handleSettingClick = (setting: typeof settings[0]) => {
+    if (setting.comingSoon) return;
+    
     // Check if tab is already open
     const isTabOpen = tabStore.tabs.some(tab => tab.id === setting.tabId);
     
@@ -256,21 +263,30 @@ export default function SettingsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 onClick={() => handleSettingClick(setting)}
-                className="cursor-pointer"
+                className={`cursor-pointer ${setting.comingSoon ? 'opacity-60' : ''}`}
               >
-                <Card className="p-6 hover:shadow-lg transition-all duration-300 hover:bg-accent/50">
+                <Card className={`p-6 transition-all duration-300 ${setting.comingSoon ? 'bg-muted' : 'hover:shadow-lg hover:bg-accent/50'}`}>
                   <div className="flex items-center gap-4 mb-4">
                     <div className={`p-3 rounded-lg ${setting.color}`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{setting.title}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{setting.title}</h3>
+                        {setting.comingSoon && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Yakında</span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">{setting.description}</p>
                     </div>
                   </div>
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    disabled={setting.comingSoon}
+                  >
                     <div className="flex items-center justify-center gap-2">
-                      <span>Giriş yap</span>
+                      <span>{setting.comingSoon ? 'Yakında' : 'Giriş yap'}</span>
                     </div>
                   </Button>
                 </Card>

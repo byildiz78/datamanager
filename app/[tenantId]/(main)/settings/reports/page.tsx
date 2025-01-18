@@ -1,66 +1,67 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Pencil, Trash2, BarChart3, FileText, Laptop, Smartphone, Shield, FileCode, Folder } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Mail, Phone, Calendar, Clock, Plus, BarChart3, Folder, FileText, Laptop, Smartphone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/common';
 import { useTabStore } from "@/stores/tab-store";
 import axios, { isAxiosError } from "@/lib/axios";
+import { toast } from '@/components/ui/toast/use-toast';
+import { Efr_Users } from '@/pages/api/settings/users/types';
+import { useReportsStore } from '@/stores/settings/reports/reports-store';
 import { WebReport } from '@/pages/api/settings/reports/types';
 
 export default function ReportsPage() {
-    const [reports, setReports] = React.useState<WebReport[]>([]);
-    const { addTab, setActiveTab } = useTabStore();
+    const { reports, setReports } = useReportsStore();
+    const { addTab, setActiveTab ,removeTab} = useTabStore();
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
         const fetchReports = async () => {
             try {
                 setIsLoading(true);
-                const { data } = await axios.get('/api/settings/reports/settings_web_reports');
-                setReports(data);
+                const response = await axios.get('/api/settings/reports/settings_web_reports');
+                setReports(response.data);
             } catch (error) {
-                console.error('Error fetching reports:', error);
-                if (isAxiosError(error)) {
-                    console.error('Axios error:', error.response?.data);
-                }
+                console.error('Error fetching users:', error);
+                toast({
+                    title: "Hata!",
+                    description: "Kullanıcılar yüklenirken bir hata oluştu.",
+                    variant: "destructive",
+                });
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchReports();
-    }, []);
+    }, [setReports]);
 
     const handleEditReport = (report: WebReport) => {
-        // TODO: Implement edit functionality
-        console.log('Edit report:', report);
+        const tabId = `edit-reports-${report.ReportID}`;
+        const tab = {
+            id: tabId,
+            title: `Rapor Düzenle - ${report.ReportName}`,
+            props: { data: report },
+            lazyComponent: () => import('./create/reports-form').then(module => ({
+                default: (props: any) => {
+                    const Component = module.default;
+                    const tabProps = useTabStore.getState().getTabProps(tabId);
+                    return <Component {...tabProps} />;
+                }
+            }))
+        };
+        addTab(tab);
+        setActiveTab(tabId);
     };
-
-    const handleDeleteReport = (id: number) => {
-        // TODO: Implement delete functionality
-        console.log('Delete report:', id);
-    };
-
-    const handleAddReportClick = () => {
-        const tabId = "new-report-form";
+    
+    const handleAddUserClick = () => {
+        const tabId = "new-reports-form";
         addTab({
             id: tabId,
             title: "Yeni Rapor",
-            lazyComponent: () => import("./reports-form").then(mod => ({
-                default: () => (
-                    <div className="p-8">
-                        <div className="rounded-lg border bg-card p-6">
-                            <mod.ReportsForm
-                                onSubmit={(reportData) => {
-                                    setReports(prev => [...prev, reportData]);
-                                    setActiveTab("reports-list");
-                                }}
-                                onClose={() => setActiveTab("reports-list")}
-                            />
-                        </div>
-                    </div>
-                )
+            lazyComponent: () => import('./create/reports-form').then(module => ({
+                default: (props: any) => <module.default {...props} />
             }))
         });
         setActiveTab(tabId);
@@ -201,7 +202,7 @@ export default function ReportsPage() {
 
     return (
         <div className="flex flex-col h-full space-y-4 p-4 md:p-2 pt-6">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold">Rapor Yönetimi</h1>
                     <p className="text-muted-foreground">
@@ -209,7 +210,7 @@ export default function ReportsPage() {
                     </p>
                 </div>
                 <Button
-                    onClick={handleAddReportClick}
+                    onClick={handleAddUserClick}
                     className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
                 >
                     <Plus className="w-4 h-4 mr-2" />
@@ -224,25 +225,16 @@ export default function ReportsPage() {
                 searchFields={['ReportName', 'ReportID', 'ReportQuery']}
                 idField="AutoID"
                 isLoading={isLoading}
-                renderActions={(report) => (
+                renderActions={(reports) => (
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 hover:scale-105 hover:bg-violet-500/10 hover:text-violet-600 transition-all"
-                            onClick={() => handleEditReport(report)}
+                            onClick={() => handleEditReport(reports)}
                         >
                             <Pencil className="w-4 h-4" />
                             <span className="sr-only">Düzenle</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
-                            onClick={() => handleDeleteReport(report.AutoID)}
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            <span className="sr-only">Sil</span>
                         </Button>
                     </div>
                 )}

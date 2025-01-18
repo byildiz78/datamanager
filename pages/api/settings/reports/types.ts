@@ -10,6 +10,7 @@ export type WebReport = {
     SecurityLevel?: number;
     ReportQuery?: string;
     ReportIcon?: string;
+    QueryDayLimit?: number
 }
 
 export type WebReportGroup = {
