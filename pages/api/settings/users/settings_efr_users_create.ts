@@ -73,7 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             query: `
                 DECLARE @InsertedID INT;
 
-                INSERT INTO efr_Users2(
+                INSERT INTO efr_Users(
                     [UserName], 
                     [EncryptedPass], 
                     [UserPWD], 

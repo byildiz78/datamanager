@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const result = await instance.executeQuery({
             query: `
-                UPDATE efr_Users2 SET
+                UPDATE efr_Users SET
                     UserName = @UserName,
                     Category = @Category,
                     UserBranchs = @UserBranchs,
