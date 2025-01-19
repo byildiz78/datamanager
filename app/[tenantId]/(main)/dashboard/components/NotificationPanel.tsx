@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFilterStore } from "@/stores/filters-store";
 import axios, {isAxiosError} from "@/lib/axios";
 import { SettingsMenu } from "@/components/notifications/settings-menu";
+import { useTabStore } from "@/stores/tab-store";
 
 interface NotificationStyle {
     icon: typeof CheckCircle2;
@@ -90,6 +91,7 @@ export default function NotificationPanel({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { isOpen, setIsOpen, orderDetail, fetchOrderDetail } = useOrderDetail();
     const [hasFetched, setHasFetched] = useState(false);
+    const { activeTab } = useTabStore();
 
     // Update tempSettings when settings prop changes
     useEffect(() => {
@@ -147,7 +149,7 @@ export default function NotificationPanel({
         let intervalId: NodeJS.Timeout;
 
         const startInterval = () => {
-            if (!selectedFilter.branches.length) return;
+            if (!selectedFilter.branches.length || activeTab !== "dashboard") return;
 
             // İlk fetch sadece bir kere yapılacak
             if (!hasFetched && !settingsLoading) {
@@ -156,7 +158,7 @@ export default function NotificationPanel({
             
             // Set interval for subsequent fetches
             intervalId = setInterval(() => {
-                if (document.hidden) return;
+                if (document.hidden || activeTab !== "dashboard") return;
                 fetchNotifications(false);
             }, 50000);
         };
@@ -168,7 +170,7 @@ export default function NotificationPanel({
                 clearInterval(intervalId);
             }
         };
-    }, [fetchNotifications, selectedFilter.branches, settingsLoading, hasFetched]);
+    }, [fetchNotifications, selectedFilter.branches, settingsLoading, hasFetched, activeTab]);
 
     const renderNotification = useCallback((notification: Notification, index: number, isLastItem: boolean) => {
         const style = NOTIFICATION_STYLES[notification.type];
@@ -319,8 +321,7 @@ export default function NotificationPanel({
                                     "hover:opacity-80 active:scale-95",
                                     style.bgColor,
                                     style.color
-                                )}
-                            >
+                                )}>
                                 {style.label}
                             </span>
                         ))}
