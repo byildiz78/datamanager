@@ -40,6 +40,7 @@ export default function Dashboard() {
     const [countdown, setCountdown] = useState(REFRESH_INTERVAL / 1000);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
     const [settingsLoading, setSettingsLoading] = useState(true);
+    const [hasFetched, setHasFetched] = useState(false);
     const { selectedFilter } = useFilterStore();
     const { setBranchDatas } = useWidgetDataStore();
     const {tabs, activeTab} = useTabStore();
@@ -103,48 +104,79 @@ export default function Dashboard() {
         }
     }, [pathname, fetchSettings]);
 
-    const fetchData = useCallback(async () => {
-        if(activeTab === 'dashboard'){
-            const branches =
+    const fetchData = useCallback(async (isInitial = false) => {
+        const branches =
             selectedFilter.selectedBranches.length <= 0
                 ? selectedFilter.branches
                 : selectedFilter.selectedBranches;
 
-            if (branches.length > 0) {
-                const branchIds = branches.map((item: Branch) => item.BranchID);
+        if (branches.length > 0) {
+            const branchIds = branches.map((item: Branch) => item.BranchID);
 
-                try {
-                    const response = await axios.post<WebWidgetData[]>(
-                        "/api/widgetreport",
-                        {
-                            date1: selectedFilter.date.from,
-                            date2: selectedFilter.date.to,
-                            branches: branchIds,
-                            reportId: 522,
-                        },
-                        {
-                            headers: { "Content-Type": "application/json" },
-                        }
-                    )
-                    setBranchDatas(response.data);
-
-                } catch (error) {
-                    console.error("Error fetching data:", error);
-                } finally {
+            try {
+                const response = await axios.post<WebWidgetData[]>(
+                    "/api/widgetreport",
+                    {
+                        date1: selectedFilter.date.from,
+                        date2: selectedFilter.date.to,
+                        branches: branchIds,
+                        reportId: 522,
+                    },
+                    {
+                        headers: { "Content-Type": "application/json" },
+                    }
+                )
+                setBranchDatas(response.data);
+                if (!isInitial) {
                     setCountdown(REFRESH_INTERVAL / 1000);
                 }
+                setHasFetched(true);
+            } catch (error) {
+                console.error("Error fetching data:", error);
             }
         }
-
     }, [selectedFilter.selectedBranches, selectedFilter.branches, selectedFilter.date, setBranchDatas]);
 
     useEffect(() => {
-        fetchData();
-        const intervalId = setInterval(() => {
-            fetchData();
+        let intervalId: NodeJS.Timeout;
+
+        if (!selectedFilter.branches.length) return;
+
+        // İlk fetch sadece bir kere yapılacak
+        if (!hasFetched && activeTab === "dashboard") {
+            fetchData(true);
+        }
+        
+        // Set interval for subsequent fetches
+        intervalId = setInterval(() => {
+            if (document.hidden || activeTab !== "dashboard") return;
+            fetchData(false);
         }, REFRESH_INTERVAL);
-        return () => clearInterval(intervalId);
-    }, [fetchData]);
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [fetchData, selectedFilter.branches.length, hasFetched, activeTab]);
+
+    // Countdown için ayrı useEffect
+    useEffect(() => {
+        const countdownInterval = setInterval(() => {
+            if (activeTab === "dashboard") {
+                setCountdown((prevCount) => {
+                    if (prevCount <= 1) {
+                        return REFRESH_INTERVAL / 1000;
+                    }
+                    return prevCount - 1;
+                });
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(countdownInterval);
+        };
+    }, [activeTab]);
 
     useEffect(() => {
         fetchSettings();
