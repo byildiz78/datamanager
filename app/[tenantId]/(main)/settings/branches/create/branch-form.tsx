@@ -35,13 +35,14 @@ export default function BranchForm(props: BranchFormProps) {
     if (data) {
       // TagTitles'ı TagIDs'e çevir
       const tagTitlesArray = data.TagTitles?.split(',').filter(tag => tag.trim()) || [];
-      const tagIds = tagTitlesArray.map(title => 
-        tags?.find(tag => tag.TagTitle === title)?.TagID || ''
-      ).filter(id => id !== '');
+      const tagIds = tagTitlesArray.map(title => {
+        const foundTag = tags?.find(tag => tag.TagTitle.trim() === title.trim());
+        return foundTag?.TagID || '';
+      }).filter(id => id !== '');
 
       return {
         ...data,
-        TagIDs: tagIds
+        TagIDs: tagIds.length > 0 ? tagIds : data.TagIDs || [] // Eğer TagIDs convert edilemezse, data'dan gelen TagIDs'i kullan
       };
     }
     return {
@@ -53,6 +54,7 @@ export default function BranchForm(props: BranchFormProps) {
       LogoWarehouseCode: "",
       IsActive: true,
       TagIDs: [],
+      TagTitles: "",
       OpeningTime: "",
       ClosingTime: "",
       BranchSquareMeter: "",
@@ -120,17 +122,21 @@ export default function BranchForm(props: BranchFormProps) {
         : axios.post(endpoint, formData));
 
       if (response.data.success) {
+        // API'den gelen güncel tag'leri kullan
+        const updatedFormData = {
+          ...formData,
+          ...response.data.data, // API'den gelen tüm güncel verileri al
+          TagIDs: response.data.data?.TagIDs || formData.TagIDs, // API'den gelen TagIDs'i kullan, yoksa mevcut TagIDs'i koru
+          TagTitles: response.data.data?.TagTitles || '' // API'den gelen TagTitles'ı da al
+        };
+
         if (data) {
-          // API'den gelen güncel tag'leri kullan
-          const updatedFormData = {
-            ...formData,
-            TagIDs: response.data.tags?.map((tag: any) => tag.TagID) || [] // Eğer tags boşsa boş array kullan
-          };
           updateBranch(updatedFormData);
-          setFormData(updatedFormData);
         } else {
-          addBranch(formData);
+          addBranch(updatedFormData);
         }
+        
+        setFormData(updatedFormData); // Form verilerini güncelle
 
         toast({
           title: (
@@ -176,20 +182,35 @@ export default function BranchForm(props: BranchFormProps) {
   };
 
   useEffect(() => {
-    if (data && tags?.length > 0 && data.TagTitles) {
-      const tagTitlesArray = data.TagTitles.split(',').filter(tag => tag.trim() !== '');
-      const foundTagIds = tagTitlesArray
-        .map(tagTitle => {
-          const foundTag = tags.find(t => t.TagTitle === tagTitle.trim());
-          return foundTag?.TagID || '';
-        })
-        .filter(id => id !== '');
+    if (data && tags?.length > 0) {
+      // Önce TagTitles'dan dene
+      if (data.TagTitles) {
+        const tagTitlesArray = data.TagTitles.split(',').filter(tag => tag.trim() !== '');
+        const foundTagIds = tagTitlesArray
+          .map(tagTitle => {
+            const foundTag = tags.find(t => t.TagTitle.trim() === tagTitle.trim());
+            return foundTag?.TagID || '';
+          })
+          .filter(id => id !== '');
 
-      setFormData(prev => ({
-        ...prev,
-        ...data,
-        TagIDs: foundTagIds
-      }));
+        if (foundTagIds.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            ...data,
+            TagIDs: foundTagIds
+          }));
+          return;
+        }
+      }
+
+      // Eğer TagTitles'dan bulunamazsa ve TagIDs varsa, direkt TagIDs'i kullan
+      if (data.TagIDs && data.TagIDs.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          ...data,
+          TagIDs: data.TagIDs
+        }));
+      }
     }
   }, [data, tags]);
 
