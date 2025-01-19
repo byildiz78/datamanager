@@ -19,21 +19,30 @@ import OtherFeatures from "./components/other-features";
 interface BranchFormProps {
   onClose?: () => void;
   data?: Efr_Branches;
+  tags: Efr_Tags[];
+  isTagsLoading: boolean;
 }
 
 export default function BranchForm(props: BranchFormProps) {
-  const { data } = props;
+  const { data, tags, isTagsLoading } = props;
   const { selectedFilter } = useFilterStore();
   const { addBranch, updateBranch } = useBranchesStore();
-  const [efr_tags, setEfr_tags] = React.useState<Efr_Tags[]>([]);
   const { removeTab, setActiveTab } = useTabStore();
   const [activeTab, setActivesTab] = useState("branch-info");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<Efr_Branches>(() => {
     if (data) {
-      return data;
+      // TagTitles'ı TagIDs'e çevir
+      const tagTitlesArray = data.TagTitles?.split(',').filter(tag => tag.trim()) || [];
+      const tagIds = tagTitlesArray.map(title => 
+        tags?.find(tag => tag.TagTitle === title)?.TagID || ''
+      ).filter(id => id !== '');
+
+      return {
+        ...data,
+        TagIDs: tagIds
+      };
     }
     return {
       BranchID: 0,
@@ -167,15 +176,11 @@ export default function BranchForm(props: BranchFormProps) {
   };
 
   useEffect(() => {
-    fetchEfrTags();
-  }, []);
-
-  useEffect(() => {
-    if (data && efr_tags?.length > 0 && data.TagTitles) {
+    if (data && tags?.length > 0 && data.TagTitles) {
       const tagTitlesArray = data.TagTitles.split(',').filter(tag => tag.trim() !== '');
       const foundTagIds = tagTitlesArray
         .map(tagTitle => {
-          const foundTag = efr_tags.find(t => t.TagTitle === tagTitle.trim());
+          const foundTag = tags.find(t => t.TagTitle === tagTitle.trim());
           return foundTag?.TagID || '';
         })
         .filter(id => id !== '');
@@ -186,19 +191,7 @@ export default function BranchForm(props: BranchFormProps) {
         TagIDs: foundTagIds
       }));
     }
-  }, [data, efr_tags]);
-
-  const fetchEfrTags = React.useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await axios.get<Efr_Tags[]>('/api/settings/efr_tag/settings_efr_tag');
-      setEfr_tags(response.data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching efr tags:', error);
-      setIsLoading(false);
-    }
-  }, []);
+  }, [data, tags]);
 
   const tabs = [
     {
@@ -229,7 +222,7 @@ export default function BranchForm(props: BranchFormProps) {
           variant="ghost"
           size="icon"
           onClick={() => {
-            const tabId = data ? `edit-branch-${data.BranchID}` : 'new-branch-form';
+            const tabId = data ? `edit-branches-${data.BranchID}` : 'new-branches-form';
             removeTab(tabId);
             setActiveTab('branches-list');
           }}
@@ -319,7 +312,7 @@ export default function BranchForm(props: BranchFormProps) {
               hover:[&::-webkit-scrollbar-thumb]:bg-gray-300/80
               dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700/80
             ">
-            <BranchInfo formData={formData} setFormData={setFormData} efr_tags={efr_tags} isLoading={isLoading} />
+            <BranchInfo formData={formData} setFormData={setFormData} efr_tags={tags} isLoading={isTagsLoading} />
           </div>
         </TabsContent>
 

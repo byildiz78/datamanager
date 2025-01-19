@@ -72,6 +72,7 @@ const WidgetCard = memo(function WidgetCard({
     const [widgetData, setWidgetData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
     const { selectedFilter } = useFilterStore();
     const colorSet = useMemo(() => gradientColors[columnIndex % gradientColors.length], [columnIndex]);
     const { tabs, activeTab } = useTabStore();
@@ -100,6 +101,7 @@ const WidgetCard = memo(function WidgetCard({
                 });
                 if (response.status === 200) {
                     setWidgetData(response.data[0]);
+                    setHasFetched(true);
                 }
             } catch (err) {
                 console.error(`Error fetching data for widget ${reportId}:`, err);
@@ -111,29 +113,30 @@ const WidgetCard = memo(function WidgetCard({
                 }
             }
         }
-
-    }, [selectedFilter.date, selectedBranches, reportId]);
+    }, [selectedFilter.date, selectedBranches, reportId, activeTab]);
 
     useEffect(() => {
-        let isSubscribed = true;
+        let intervalId: NodeJS.Timeout;
 
-        const fetchData = async () => {
-            await getReportData(true);
-            if (!isSubscribed) return;
-        };
+        if (!selectedBranches.length) return;
 
-        fetchData();
-
-        const interval = setInterval(() => {
-            if (!isSubscribed) return;
+        // İlk fetch sadece bir kere yapılacak
+        if (!hasFetched && activeTab === "dashboard") {
+            getReportData(true);
+        }
+        
+        // Set interval for subsequent fetches
+        intervalId = setInterval(() => {
+            if (document.hidden || activeTab !== "dashboard") return;
             getReportData(false);
-        }, 90000);
+        }, REFRESH_INTERVAL);
 
         return () => {
-            isSubscribed = false;
-            clearInterval(interval);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
         };
-    }, [getReportData]);
+    }, [getReportData, selectedBranches.length, hasFetched]);
 
     const showValue2 = widgetData?.reportValue2 != null &&
         widgetData?.reportValue2 !== undefined &&

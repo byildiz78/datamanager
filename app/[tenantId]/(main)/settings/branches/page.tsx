@@ -16,6 +16,8 @@ export default function BranchPage() {
   const { addTab, setActiveTab, removeTab } = useTabStore();
   const [isLoading, setIsLoading] = React.useState(true);
   const [isTagDialogOpen, setIsTagDialogOpen] = React.useState(false);
+  const [tags, setTags] = React.useState([]);
+  const [isTagsLoading, setIsTagsLoading] = React.useState(false);
 
   React.useEffect(() => {
     const fetchBranches = async () => {
@@ -39,17 +41,32 @@ export default function BranchPage() {
   }, [setBranches]);
 
   React.useEffect(() => {
-    if (isTagDialogOpen) {
-      // fetchTags();
-    }
-  }, [isTagDialogOpen]);
+    const fetchTags = async () => {
+      try {
+        setIsTagsLoading(true);
+        const response = await axios.get('/api/settings/efr_tag/settings_efr_tag');
+        setTags(response.data);
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+        toast({
+          title: "Hata!",
+          description: "Etiketler yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsTagsLoading(false);
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   const handleEditBranch = (branch: Efr_Branches) => {
     const tabId = `edit-branches-${branch.BranchID}`;
     const tab = {
       id: tabId,
       title: `Şube Düzenle - ${branch.BranchName}`,
-      props: { data: branch },
+      props: { data: branch, tags, isTagsLoading },
       lazyComponent: () => import('./create/branch-form').then(module => ({
         default: (props: any) => {
           const Component = module.default;
@@ -67,8 +84,13 @@ export default function BranchPage() {
     addTab({
       id: tabId,
       title: "Yeni Şube",
+      props: { tags, isTagsLoading },
       lazyComponent: () => import('./create/branch-form').then(module => ({
-        default: (props: any) => <module.default {...props} />
+        default: (props: any) => {
+          const Component = module.default;
+          const tabProps = useTabStore.getState().getTabProps(tabId);
+          return <Component {...tabProps} />;
+        }
       }))
     });
     setActiveTab(tabId);
@@ -211,6 +233,9 @@ export default function BranchPage() {
           <TagDialog 
             isOpen={isTagDialogOpen}
             onOpenChange={setIsTagDialogOpen}
+            tags={tags}
+            isLoading={isTagsLoading}
+            onTagsChange={setTags}
           />
           <Button
             onClick={handleAddBranchClick}

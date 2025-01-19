@@ -9,7 +9,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tag as TagIcon, Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface BranchInfoProps {
   formData: Efr_Branches;
@@ -18,7 +17,7 @@ interface BranchInfoProps {
   isLoading?: boolean;
 }
 
-export default function BranchInfo({ formData, setFormData, efr_tags, isLoading = false }: BranchInfoProps) {
+export default function BranchInfo({ formData, setFormData, efr_tags = [], isLoading = false }: BranchInfoProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>(formData.TagIDs || []);
 
   useEffect(() => {
@@ -135,7 +134,7 @@ export default function BranchInfo({ formData, setFormData, efr_tags, isLoading 
               <CommandEmpty>Etiket bulunamadı.</CommandEmpty>
               <CommandGroup>
                 <div className="p-2">
-                  {efr_tags?.map((tag) => (
+                  {(efr_tags || [])?.map((tag) => (
                     <CommandItem
                       key={tag.TagID}
                       value={tag.TagTitle || ""}
