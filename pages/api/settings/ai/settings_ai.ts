@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Dataset } from '@/pages/api/dataset';
-import { WebWidget } from '@/types/tables';
+import { Ai } from './types';
 
 export default async function handler(
     req: NextApiRequest,
@@ -13,30 +13,19 @@ export default async function handler(
     try {
         const query = `
             SELECT 
-            ReportName,
-            ReportID,
-            ReportIndex,
-            ReportIcon,
-            V1Type,
-            V2Type,
-            V3Type,
-            V4Type,
-            V5Type,
-            V6Type,
-            ReportQuery,
-            ReportQuery2,
-            IsActive,
-            ReportColor,
-            BranchDetail,
-            ReportType,
+            ChatbotQuery,
+            ChatbotRole,
+            AnalysisTitle,
+            Icon,
+            ChatbotContent,
+            ChatBotID,
+            ChatbotQueryParams,
             AutoID
-            FROM dm_webWidgets7 
-            WHERE IsActive = 1 
-            ORDER BY ReportIndex ASC
+            FROM dm_ChatBot WITH (NOLOCK) 
         `;
         const instance = Dataset.getInstance();
 
-        const result = await instance.executeQuery<WebWidget[]>({
+        const result = await instance.executeQuery<Ai[]>({
             query,
             req
         });

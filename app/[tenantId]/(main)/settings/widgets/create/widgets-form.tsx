@@ -15,7 +15,8 @@ import {
   MessageCircle, Monitor, Moon, Package, Paperclip, PieChart, Power,
   Printer, Search, Settings, Share, ShoppingBag, ShoppingCart, Star,
   Sun, Table, Tag, Target, Terminal, ThumbsUp, Truck, Upload,
-  User, Video, Wallet, Zap
+  User, Video, Wallet, Zap,
+  Footprints,Utensils,Clipboard,Calculator,TrendingUp,Ban,Receipt,BarChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
@@ -176,7 +177,8 @@ export default function WidgetForm(props: WidgetFormProps) {
     ShoppingBag, ShoppingCart, Smartphone, Star, Store,
     Sun, Table, Tag, Target, Terminal, ThumbsUp,
     Trash2, Truck, Upload, User, UserPlus,
-    Users, Video, Wallet, X, Zap
+    Users, Video, Wallet, X, Zap,Footprints,Utensils,Clipboard,Calculator,
+    TrendingUp,Ban,Receipt,BarChart
   };
 
   const lucideIcons = Object.entries(icons)
