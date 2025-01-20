@@ -93,8 +93,8 @@ export default function SettingsPage() {
       description: "Rapor ve diğer kontrolleri tanımlayabilirsiniz",
       icon: HandCoins,
       color: "bg-red-500 dark:bg-red-600",
-      route: "security",
-      tabId: "security-settings",
+      route: "ai",
+      tabId: "ai-list",
     },
     {
       title: "Rapor Kolon Özellikleri",
