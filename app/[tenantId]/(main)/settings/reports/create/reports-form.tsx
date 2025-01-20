@@ -23,6 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ReportFormProps {
   onClose?: () => void;
@@ -162,6 +163,7 @@ export default function ReportForm(props: ReportFormProps) {
   };
 
   return (
+    <ScrollArea className="h-[calc(90vh-6rem)] overflow-y-auto">
     <form onSubmit={handleSubmit} className="flex flex-col space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -410,5 +412,6 @@ export default function ReportForm(props: ReportFormProps) {
         </CardContent>
       </Card>
     </form>
+    </ScrollArea>
   );
 }
