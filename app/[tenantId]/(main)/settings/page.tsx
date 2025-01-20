@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Store, FileText, Bell, List, Shield, Database, Settings, Workflow, Lock } from "lucide-react";
+import { Users, Store, FileText, Bell, List, Shield, Database, Settings, Workflow, Lock, PieChart, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTabStore } from "@/stores/tab-store";
@@ -73,13 +73,12 @@ export default function SettingsPage() {
       tabId: "reports-list"
     },
     {
-      title: "Duyuru İşlemleri",
-      description: "Sistem genelinde duyuru yayınlama yapabilirsiniz",
-      icon: Bell,
+      title: "Superset Rapor Listesi",
+      description: "Superset Rapor ekleme ve düzenleme işlemlerini yapabilirsiniz",
+      icon: PieChart,
       color: "bg-yellow-500 dark:bg-yellow-600",
-      route: "announcements",
-      tabId: "announcements-list",
-      comingSoon: true
+      route: "superset",
+      tabId: "superset-list",
     },
     {
       title: "Widget Listesi",
@@ -90,13 +89,12 @@ export default function SettingsPage() {
       tabId: "widgets-list"
     },
     {
-      title: "Güvenlik Ayarları",
-      description: "Şifre ve diğer kontrolleri tanımlayabilirsiniz",
-      icon: Shield,
+      title: "AI Ayarları",
+      description: "Rapor ve diğer kontrolleri tanımlayabilirsiniz",
+      icon: HandCoins,
       color: "bg-red-500 dark:bg-red-600",
       route: "security",
       tabId: "security-settings",
-      comingSoon: true
     },
     {
       title: "Rapor Kolon Özellikleri",

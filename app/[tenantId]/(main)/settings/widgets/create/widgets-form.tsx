@@ -187,251 +187,253 @@ export default function WidgetForm(props: WidgetFormProps) {
     }));
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">
-            {data ? 'Widget Düzenle' : 'Yeni Widget'}
-          </h2>
-          <p className="text-muted-foreground">
-            {data ? 'Widget bilgilerini düzenleyin' : 'Yeni bir widget oluşturun'}
-          </p>
+    <ScrollArea className="h-[calc(90vh-6rem)] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">
+              {data ? 'Widget Düzenle' : 'Yeni Widget'}
+            </h2>
+            <p className="text-muted-foreground">
+              {data ? 'Widget bilgilerini düzenleyin' : 'Yeni bir widget oluşturun'}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const tabId = data ? `edit-widgets-${data.ReportID}` : 'new-widget-form';
+              removeTab(tabId);
+              setActiveTab('widgets-list');
+            }}
+            className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            const tabId = data ? `edit-widgets-${data.ReportID}` : 'new-widget-form';
-            removeTab(tabId);
-            setActiveTab('widgets-list');
-          }}
-          className="h-8 w-8 hover:scale-105 hover:bg-red-500/10 hover:text-red-600 transition-all"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-2">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <FileText className="w-4 h-4" />
-                Widget ID
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  value={formData.ReportID}
-                  onChange={(e) => setFormData({ ...formData, ReportID: parseInt(e.target.value) || 0 })}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={generateRandomId}
-                  className="flex-none"
-                  title="Rastgele ID Oluştur"
+        <Card>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-2">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" />
+                  Widget ID
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={formData.ReportID}
+                    onChange={(e) => setFormData({ ...formData, ReportID: parseInt(e.target.value) || 0 })}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={generateRandomId}
+                    className="flex-none"
+                    title="Rastgele ID Oluştur"
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <BarChart3Icon className="w-4 h-4" />
+                  Sıra
+                </label>
+                <Select
+                  value={formData.ReportIndex?.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, ReportIndex: parseInt(value) })}
                 >
-                  <RefreshCcw className="w-4 h-4" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sıra Seçiniz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-4">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <FileTextIcon className="w-4 h-4" />
+                  Widget Adı
+                </label>
+                <Input
+                  value={formData.ReportName}
+                  onChange={(e) => setFormData({ ...formData, ReportName: e.target.value })}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <FileTextIcon className="w-4 h-4" />
+                  İkon
+                </label>
+                <Dialog open={isIconDialogOpen} onOpenChange={setIsIconDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      onClick={() => setIsIconDialogOpen(true)}
+                    >
+                      <div className="flex items-center gap-2">
+                        {selectedIcon && React.createElement(icons[selectedIcon as keyof typeof icons], { className: "w-4 h-4" })}
+                        <span>{selectedIcon || "İkon Seç"}</span>
+                      </div>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh]">
+                    <DialogHeader>
+                      <DialogTitle>İkon Seç</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4">
+                      <Input
+                        placeholder="İkon ara..."
+                        value={iconSearch}
+                        onChange={(e) => setIconSearch(e.target.value)}
+                        className="sticky top-0 bg-background"
+                      />
+                      <ScrollArea className="h-[60vh] rounded-md border">
+                        <div className="grid grid-cols-6 gap-4 p-4">
+                          {lucideIcons.map(({ name, Icon }) => (
+                            <Button
+                              key={name}
+                              variant="outline"
+                              className={`flex h-24 w-full flex-col items-center justify-center gap-2 p-2 hover:bg-accent hover:text-accent-foreground ${selectedIcon === name ? 'ring-2 ring-primary' : ''}`}
+                              onClick={() => {
+                                setSelectedIcon(name);
+                                setFormData({ ...formData, ReportIcon: name });
+                                setIsIconDialogOpen(false);
+                              }}
+                            >
+                              <Icon className="h-8 w-8" />
+                              <span className="text-xs text-center line-clamp-2">{name}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="col-span-4 grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2 mb-1">
+                    <FileTextIcon className="w-4 h-4" />
+                    Durum
+                  </label>
+                  <div className="flex items-center space-x-2 h-10">
+                    <Checkbox
+                      id="isActive"
+                      checked={formData.IsActive}
+                      onCheckedChange={(checked) => setFormData({ ...formData, IsActive: checked })}
+                    />
+                    <label
+                      htmlFor="isActive"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Aktif
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2 mb-1">
+                    <FileTextIcon className="w-4 h-4" />
+                    Şube Detay
+                  </label>
+                  <div className="flex items-center space-x-2 h-10">
+                    <Checkbox
+                      id="branchDetail"
+                      checked={formData.BranchDetail}
+                      onCheckedChange={(checked) => setFormData({ ...formData, BranchDetail: checked })}
+                    />
+                    <label
+                      htmlFor="branchDetail"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Aktif
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-12">
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Kaydediliyor...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Kaydet
+                    </>
+                  )}
                 </Button>
               </div>
-            </div>
 
-            <div className="col-span-2">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <BarChart3Icon className="w-4 h-4" />
-                Sıra
-              </label>
-              <Select
-                value={formData.ReportIndex?.toString()}
-                onValueChange={(value) => setFormData({ ...formData, ReportIndex: parseInt(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sıra Seçiniz" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
-                    <SelectItem key={num} value={num.toString()}>
-                      {num}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="col-span-4">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <FileTextIcon className="w-4 h-4" />
-                Widget Adı
-              </label>
-              <Input
-                value={formData.ReportName}
-                onChange={(e) => setFormData({ ...formData, ReportName: e.target.value })}
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <FileTextIcon className="w-4 h-4" />
-                İkon
-              </label>
-              <Dialog open={isIconDialogOpen} onOpenChange={setIsIconDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    onClick={() => setIsIconDialogOpen(true)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {selectedIcon && React.createElement(icons[selectedIcon as keyof typeof icons], { className: "w-4 h-4" })}
-                      <span>{selectedIcon || "İkon Seç"}</span>
-                    </div>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh]">
-                  <DialogHeader>
-                    <DialogTitle>İkon Seç</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex flex-col gap-4">
-                    <Input
-                      placeholder="İkon ara..."
-                      value={iconSearch}
-                      onChange={(e) => setIconSearch(e.target.value)}
-                      className="sticky top-0 bg-background"
-                    />
-                    <ScrollArea className="h-[60vh] rounded-md border">
-                      <div className="grid grid-cols-6 gap-4 p-4">
-                        {lucideIcons.map(({ name, Icon }) => (
-                          <Button
-                            key={name}
-                            variant="outline"
-                            className={`flex h-24 w-full flex-col items-center justify-center gap-2 p-2 hover:bg-accent hover:text-accent-foreground ${selectedIcon === name ? 'ring-2 ring-primary' : ''}`}
-                            onClick={() => {
-                              setSelectedIcon(name);
-                              setFormData({ ...formData, ReportIcon: name });
-                              setIsIconDialogOpen(false);
-                            }}
-                          >
-                            <Icon className="h-8 w-8" />
-                            <span className="text-xs text-center line-clamp-2">{name}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="col-span-4 grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2 mb-1">
+              <div className="col-span-12">
+                <label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <FileTextIcon className="w-4 h-4" />
-                  Durum
+                  SQL Sorgusu
                 </label>
-                <div className="flex items-center space-x-2 h-10">
-                  <Checkbox
-                    id="isActive"
-                    checked={formData.IsActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, IsActive: checked })}
+                <div className="border rounded-md overflow-hidden">
+                  <CodeMirror
+                    value={formData.ReportQuery || ''}
+                    height="380px"
+                    theme={vscodeDark}
+                    extensions={[sql()]}
+                    onChange={value => setFormData(prev => ({ ...prev, ReportQuery: value }))}
+                    basicSetup={{
+                      lineNumbers: true,
+                      highlightActiveLineGutter: true,
+                      highlightSpecialChars: true,
+                      history: true,
+                      foldGutter: true,
+                      drawSelection: true,
+                      dropCursor: true,
+                      allowMultipleSelections: true,
+                      indentOnInput: true,
+                      syntaxHighlighting: true,
+                      bracketMatching: true,
+                      closeBrackets: true,
+                      autocompletion: true,
+                      rectangularSelection: true,
+                      crosshairCursor: true,
+                      highlightActiveLine: true,
+                      highlightSelectionMatches: true,
+                      closeBracketsKeymap: true,
+                      defaultKeymap: true,
+                      searchKeymap: true,
+                      historyKeymap: true,
+                      foldKeymap: true,
+                      completionKeymap: true,
+                      lintKeymap: true,
+                    }}
+                    className="min-h-[380px]"
                   />
-                  <label
-                    htmlFor="isActive"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Aktif
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2 mb-1">
-                  <FileTextIcon className="w-4 h-4" />
-                  Şube Detay
-                </label>
-                <div className="flex items-center space-x-2 h-10">
-                  <Checkbox
-                    id="branchDetail"
-                    checked={formData.BranchDetail}
-                    onCheckedChange={(checked) => setFormData({ ...formData, BranchDetail: checked })}
-                  />
-                  <label
-                    htmlFor="branchDetail"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Aktif
-                  </label>
                 </div>
               </div>
             </div>
-            <div className="col-span-12">
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-violet-500 via-primary to-blue-500 text-white hover:from-violet-600 hover:via-primary/90 hover:to-blue-600 hover:shadow-md transition-all"
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Kaydediliyor...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Kaydet
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <div className="col-span-12">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <FileTextIcon className="w-4 h-4" />
-                SQL Sorgusu
-              </label>
-              <div className="border rounded-md overflow-hidden">
-                <CodeMirror
-                  value={formData.ReportQuery || ''}
-                  height="380px"
-                  theme={vscodeDark}
-                  extensions={[sql()]}
-                  onChange={value => setFormData(prev => ({ ...prev, ReportQuery: value }))}
-                  basicSetup={{
-                    lineNumbers: true,
-                    highlightActiveLineGutter: true,
-                    highlightSpecialChars: true,
-                    history: true,
-                    foldGutter: true,
-                    drawSelection: true,
-                    dropCursor: true,
-                    allowMultipleSelections: true,
-                    indentOnInput: true,
-                    syntaxHighlighting: true,
-                    bracketMatching: true,
-                    closeBrackets: true,
-                    autocompletion: true,
-                    rectangularSelection: true,
-                    crosshairCursor: true,
-                    highlightActiveLine: true,
-                    highlightSelectionMatches: true,
-                    closeBracketsKeymap: true,
-                    defaultKeymap: true,
-                    searchKeymap: true,
-                    historyKeymap: true,
-                    foldKeymap: true,
-                    completionKeymap: true,
-                    lintKeymap: true,
-                  }}
-                  className="min-h-[380px]"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </form>
+          </CardContent>
+        </Card>
+      </form>
+    </ScrollArea>
   );
 }
