@@ -27,12 +27,46 @@ export default function ChatBotComponent() {
     const [error, setError] = useState<string | null>(null)
     const { selectedFilter } = useFilterStore();
 
+    const accumulatedDataRef = useRef('');
+    const messageUpdateTimeoutRef = useRef<NodeJS.Timeout>();
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+            if (messageUpdateTimeoutRef.current) {
+                clearTimeout(messageUpdateTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Scroll işlemini debounce ile yapalım
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const timeoutId = setTimeout(() => {
+            if (containerRef.current && isMounted.current) {
+                containerRef.current.scrollTo({
+                    top: containerRef.current.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
+    }, [messages, balanceData]);
+
     useEffect(() => {
         const fetchMenuItems = async () => {
+            if (!isMounted.current) return;
+
             try {
                 const response = await axios.get('/api/ai/analyser_menu_items');
                 if (!response) throw new Error('Failed to fetch menu items');
                 const data = await response.data;
+
+                if (!isMounted.current) return;
 
                 const transformedItems = data.map((item: ChatBot) => {
                     const IconComponent = (LucideIcons as any)[item.Icon] || LucideIcons.HandCoins;
@@ -47,25 +81,17 @@ export default function ChatBotComponent() {
 
                 setMenuItems(transformedItems);
             } catch (error) {
-                setError(error instanceof Error ? error.message : 'Failed to fetch menu items');
+                if (isMounted.current) {
+                    setError(error instanceof Error ? error.message : 'Failed to fetch menu items');
+                }
             }
         };
 
         fetchMenuItems();
     }, []);
 
-    useEffect(() => {
-        if (containerRef.current) {
-            containerRef.current.scrollTo({
-                top: containerRef.current.scrollHeight,
-                behavior: 'smooth'
-            })
-        }
-    }, [messages, balanceData])
-
-
     const handleAnalyze = async (menuId: string) => {
-        if (!menuId) return;
+        if (!menuId || !isMounted.current) return;
 
         setIsLoading(true);
         setError(null);
@@ -73,11 +99,10 @@ export default function ChatBotComponent() {
         setRawData(null);
         setBalanceData(null);
         setSelectedMenu(menuId);
+        accumulatedDataRef.current = '';
 
         try {
-            // Initialize messages at the start
             setMessages([{ role: 'assistant', content: '' }]);
-            let accumulatedData = '';
 
             const response = await axios.post("/api/ai/analyser", {
                 ChatBotID: menuId,
@@ -89,10 +114,14 @@ export default function ChatBotComponent() {
             }, {
                 responseType: 'text',
                 onDownloadProgress: (progressEvent) => {
-                    const newData = progressEvent.event.target.responseText.slice(accumulatedData.length);
-                    accumulatedData = progressEvent.event.target.responseText;
+                    if (!isMounted.current) return;
+
+                    const newData = progressEvent.event.target.responseText.slice(accumulatedDataRef.current.length);
+                    accumulatedDataRef.current = progressEvent.event.target.responseText;
                     
                     const lines = newData.split('\n');
+                    let hasUpdates = false;
+                    let newContent = '';
                     
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
@@ -102,23 +131,36 @@ export default function ChatBotComponent() {
                                 if (jsonData.balance) {
                                     setBalanceData(jsonData.balance);
                                 } else {
-                                    // Set raw data from the first message
                                     if (jsonData.rawData) {
                                         setRawData(jsonData.rawData);
                                     }
 
                                     if (jsonData.content) {
-                                        setIsLoading(false);
-                                        setMessages(prev => [{
-                                            role: 'assistant',
-                                            content: prev[0].content + (jsonData.content || '')
-                                        }]);
+                                        hasUpdates = true;
+                                        newContent += jsonData.content;
                                     }
                                 }
                             } catch (e) {
                                 console.error('Error parsing SSE message:', e);
                             }
                         }
+                    }
+
+                    // Mesaj güncellemelerini birleştir
+                    if (hasUpdates) {
+                        if (messageUpdateTimeoutRef.current) {
+                            clearTimeout(messageUpdateTimeoutRef.current);
+                        }
+
+                        messageUpdateTimeoutRef.current = setTimeout(() => {
+                            if (isMounted.current) {
+                                setMessages(prev => [{
+                                    role: 'assistant',
+                                    content: prev[0].content + newContent
+                                }]);
+                                setIsLoading(false);
+                            }
+                        }, 100);
                     }
                 }
             });
@@ -127,12 +169,15 @@ export default function ChatBotComponent() {
                 throw new Error('Analysis failed');
             }
         } catch (error) {
-            setError(error instanceof Error ? error.message : 'An error occurred');
+            if (isMounted.current) {
+                setError(error instanceof Error ? error.message : 'An error occurred');
+            }
         } finally {
-            setIsLoading(false);
+            if (isMounted.current) {
+                setIsLoading(false);
+            }
         }
     };
-
 
     return (
         <div className="flex h-screen">
@@ -226,8 +271,7 @@ export default function ChatBotComponent() {
                                         </p>
                                     </div>
                                 </div>
-                                {(rawData && rawData.length !== 0) &&  <RawTable data={rawData} />
-                            }
+                                {(rawData && rawData.length !== 0) && <RawTable data={rawData} />}
                             </div>
                         </TabsContent>
                     </Tabs>

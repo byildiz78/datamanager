@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import axios, {isAxiosError} from "@/lib/axios";
+import axios from "@/lib/axios";
 
 import { WebWidget, WebWidgetData } from "@/types/tables";
 import { useFilterStore } from "@/stores/filters-store";
@@ -76,33 +76,32 @@ export default function Dashboard() {
     const handleSettingsChange = useCallback(async (newSettings: Settings) => {
         try {
             setSettingsLoading(true);
-            // Önce API'yi güncelle
-            await axios.post('/api/update-user-settings', newSettings);
+            const userData = localStorage.getItem(`userData_${pathname?.split('/')[1]}`);
+            if (!userData) {
+                throw new Error('User data not found');
+            }
+            const parsedData = JSON.parse(userData);
             
-            // Sonra state'i güncelle
+            await axios.post('/api/update-user-settings', newSettings, {
+                headers: {
+                    'x-user-id': parsedData.userId
+                }
+            });
+            
             setSettings(newSettings);
             
-            // En son localStorage'ı güncelle
-            const tenantId = pathname?.split('/')[1];
-            if (tenantId) {
-                const userData = localStorage.getItem(`userData_${tenantId}`);
-                if (userData) {
-                    const parsedData = JSON.parse(userData);
-                    const updatedData = {
-                        ...parsedData,
-                        settings: newSettings
-                    };
-                    localStorage.setItem(`userData_${tenantId}`, JSON.stringify(updatedData));
-                }
-            }
+            // Update localStorage
+            const updatedData = {
+                ...parsedData,
+                settings: newSettings
+            };
+            localStorage.setItem(`userData_${pathname?.split('/')[1]}`, JSON.stringify(updatedData));
         } catch (error) {
             console.error('Error updating settings:', error);
-            // Hata durumunda eski settings'e geri dön
-            await fetchSettings();
         } finally {
             setSettingsLoading(false);
         }
-    }, [pathname, fetchSettings]);
+    }, [pathname]);
 
     const fetchData = useCallback(async (isInitial = false) => {
         const branches =
