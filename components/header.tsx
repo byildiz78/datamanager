@@ -65,6 +65,7 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { toZonedTime } from "date-fns-tz";
 import { useExpo } from "@/hooks/use-expo";
 import { useTab } from "@/hooks/use-tab";
+import { useFilterEventStore } from "../stores/filter-event-store";
 
 import "flag-icons/css/flag-icons.min.css";
 
@@ -166,6 +167,8 @@ export default function Header() {
   const [selectedDateRange, setSelectedDateRange] = useState("today");
   
   const {handleTabOpen } = useTab();
+  const { setFilterApplied } = useFilterEventStore();
+
   React.useEffect(() => {
     if (settings.length > 0) {
       const daystart = parseInt(settings.find(setting => setting.Kod === "daystart")?.Value || '0');
@@ -248,6 +251,9 @@ export default function Header() {
       },
       selectedBranches: pendingBranches,
     });
+
+    // Trigger filter applied event
+    setFilterApplied(true);
   };
 
   const clearSelectedBranches = () => {
