@@ -52,6 +52,7 @@ export function TeamSwitcher({
                                         src={activeTeam.logo}
                                         alt={activeTeam.name}
                                         fill
+                                        sizes="(max-width: 24px) 100vw"
                                         className="object-contain"
                                     />
                                 </div>
@@ -94,6 +95,7 @@ export function TeamSwitcher({
                                                 src={team.logo}
                                                 alt={team.name}
                                                 fill
+                                                sizes="(max-width: 16px) 100vw"
                                                 className="object-contain"
                                             />
                                         </div>
