@@ -223,6 +223,66 @@ export class Dataset {
             }
         });
     }
+
+    // Burası (checkdatasetApi - checkexecuteQuery) sadece yeni raporları test amaçlı kullanılır.
+    private async checkdatasetApi<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+        const { method = 'GET', body, headers } = options;
+        const apiUrl = `${process.env.DATASET_API_BASE_URL}${endpoint}`;
+        try {
+            const response = await axios({
+                method,
+                url: apiUrl,
+                data: body,
+                headers,
+            });
+            
+            return response.data as T;
+        } catch (error) {
+            if (isAxiosError(error)) {
+                console.error('API request error:', error.response?.data || error.message);
+                throw new Error(error.response?.data?.message || 'Request failed');
+            }
+            console.error('API request error:', error);
+            throw error;
+        }
+    }
+
+    public async checkexecuteQuery<T>(params: ExecuteParams): Promise<T> {
+        const { query, parameters = {}, tenantId: paramTenantId, req, skipCache } = params;
+        let tenantId = paramTenantId;
+        if (params.req && req?.headers.referer) {
+            try {
+                tenantId = extractTenantId(req.headers.referer);
+            } catch (error) {
+                console.error('Error parsing referer:', error);
+            }
+        }
+        try {
+          
+            const database = await checkTenantDatabase(tenantId || '');
+            const databaseId = database?.databaseId || params.databaseId || '3';
+
+            if(databaseId !== undefined && databaseId !== null) {
+                return this.checkdatasetApi<T>(`/${databaseId}/datamanagerquery`, {
+                    method: 'POST',
+                    body: {
+                        query,
+                        parameters,
+                        skipCache
+                    },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${database?.apiKey}`
+                    }
+                });
+            }
+            return [] as T;
+        } catch (error) {
+            console.error('executeQuery error:', error);
+            throw error;
+        }
+    }
+
 }
 
 // Export singleton instance

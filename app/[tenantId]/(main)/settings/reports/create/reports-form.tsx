@@ -24,6 +24,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { sql } from '@codemirror/lang-sql';
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { QueryCheckButton } from "@/components/query-check-button";
 
 interface ReportFormProps {
   onClose?: () => void;
@@ -146,18 +147,19 @@ export default function ReportForm(props: ReportFormProps) {
       } else {
         toast({
           title: "Hata!",
-          description: response.data?.message || `Rapor ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
+          description: response.data.message,
           variant: "destructive",
+          duration: 5000,
         });
+        setIsSaving(false);
       }
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (error: any) {
       toast({
         title: "Hata!",
-        description: `Rapor ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
+        description: error.response?.data?.message || "Rapor kaydedilirken bir hata oluştu.",
         variant: "destructive",
+        duration: 5000,
       });
-    } finally {
       setIsSaving(false);
     }
   };
@@ -367,10 +369,13 @@ export default function ReportForm(props: ReportFormProps) {
             </div>
 
             <div className="col-span-12">
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <FileText className="w-4 h-4" />
-                SQL Sorgusu
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  SQL Sorgusu
+                </label>
+                <QueryCheckButton query={formData.ReportQuery ||''} />
+              </div>
               <div className="border rounded-md overflow-hidden">
                 <CodeMirror
                   value={formData.ReportQuery || ''}

@@ -139,15 +139,22 @@ export default function WidgetForm(props: WidgetFormProps) {
         const tabId = data ? `edit-widgets-${data.ReportID}` : 'new-widget-form';
         removeTab(tabId);
         setActiveTab('widgets-list');
+      } else {
+        toast({
+          title: "Hata!",
+          description: response.data.message,
+          variant: "destructive",
+          duration: 5000,
+        });
+        setIsSaving(false);
       }
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (error: any) {
       toast({
         title: "Hata!",
-        description: `Widget ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
+        description: error.response?.data?.message || `Widget ${data ? 'güncellenirken' : 'oluşturulurken'} bir hata oluştu.`,
         variant: "destructive",
+        duration: 5000,
       });
-    } finally {
       setIsSaving(false);
     }
   };
