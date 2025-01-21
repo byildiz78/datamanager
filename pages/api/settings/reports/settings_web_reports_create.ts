@@ -32,43 +32,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const result = await instance.executeQuery({
             query: `
+                DECLARE @IsSuccess BIT = 0;
+                DECLARE @Message NVARCHAR(200) = '';
+                DECLARE @InsertedID INT = 0;
 
-                DECLARE @InsertedID INT;
+                IF NOT EXISTS (SELECT 1 FROM dm_infiniaWebReports WHERE ReportID = @ReportID)
+                BEGIN
+                    INSERT INTO dm_infiniaWebReports (
+                        ReportID,
+                        GroupID,
+                        ReportName,
+                        ReportType,
+                        ShowDesktop,
+                        ShowMobile,
+                        DisplayOrderID,
+                        SecurityLevel,
+                        ReportQuery,
+                        ReportIcon,
+                        QueryDayLimit
+                    ) VALUES (
+                        @ReportID,
+                        @GroupID,
+                        @ReportName,
+                        @ReportType,
+                        @ShowDesktop,
+                        @ShowMobile,
+                        @DisplayOrderID,
+                        @SecurityLevel,
+                        @ReportQuery,
+                        @ReportIcon,
+                        @QueryDayLimit
+                    );
 
-                INSERT INTO dm_infiniaWebReports (
-                    ReportID,
-                    GroupID,
-                    ReportName,
-                    ReportType,
-                    ShowDesktop,
-                    ShowMobile,
-                    DisplayOrderID,
-                    SecurityLevel,
-                    ReportQuery,
-                    ReportIcon,
-                    QueryDayLimit
-                ) VALUES (
-                    @ReportID,
-                    @GroupID,
-                    @ReportName,
-                    @ReportType,
-                    @ShowDesktop,
-                    @ShowMobile,
-                    @DisplayOrderID,
-                    @SecurityLevel,
-                    @ReportQuery,
-                    @ReportIcon,
-                    @QueryDayLimit
-                );
+                    SET @InsertedID = SCOPE_IDENTITY();
+                    SET @IsSuccess = 1;
+                    SET @Message = 'Rapor başarıyla oluşturuldu';
+                END
+                ELSE
+                BEGIN
+                    SET @Message = 'Bu rapor ID''si zaten kullanılıyor';
+                END
 
-                SET @InsertedID = SCOPE_IDENTITY();
-                SELECT @InsertedID as AutoID;
+                SELECT @InsertedID as AutoID, @IsSuccess as IsSuccess, @Message as Message;
             `,
             parameters: {
                 ReportID: reportData.ReportID,
                 GroupID: reportData.GroupID,
                 ReportName: reportData.ReportName,
-                ReportType: reportData.ReportType || 2, // Default to Liste tipi
+                ReportType: reportData.ReportType || 2,
                 ShowDesktop: reportData.ShowDesktop || 0,
                 ShowMobile: reportData.ShowMobile || 0,
                 DisplayOrderID: reportData.DisplayOrderID || 0,
@@ -81,9 +92,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             req
         });
 
+        if (!result?.[0]?.IsSuccess) {
+            return res.status(400).json({
+                success: false,
+                message: result?.[0]?.Message || 'Rapor oluşturulurken bir hata oluştu',
+                error: 'DUPLICATE_REPORT_ID'
+            });
+        }
+
         return res.status(200).json({
             success: true,
-            message: 'Report created successfully',
+            message: result[0].Message,
             autoId: result[0].AutoID
         });
 

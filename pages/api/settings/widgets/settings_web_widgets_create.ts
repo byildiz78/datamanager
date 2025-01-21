@@ -35,8 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const result = await instance.executeQuery({
             query: `
-                DECLARE @InsertedID INT;
-                INSERT INTO dm_webWidgets7 (
+                DECLARE @IsSuccess BIT = 0;
+                DECLARE @Message NVARCHAR(200) = '';
+                DECLARE @InsertedID INT = 0;
+
+                IF NOT EXISTS (SELECT 1 FROM dm_webWidgets7 WHERE ReportID = @ReportID)
+                BEGIN
+                    INSERT INTO 
+                    dm_webWidgets7 (
                     ReportID,
                     ReportName,
                     ReportIndex,
@@ -73,7 +79,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 );
 
                 SET @InsertedID = SCOPE_IDENTITY();
-                SELECT @InsertedID as AutoID;
+                SET @IsSuccess = 1;
+                SET @Message = 'Rapor başarıyla oluşturuldu';
+                END
+                ELSE
+                BEGIN
+                    SET @Message = 'Bu widget ID''si zaten kullanılıyor';
+                END
+
+                SELECT @InsertedID as AutoID, @IsSuccess as IsSuccess, @Message as Message;
             `,
             parameters: {
                 ReportID: widgetData.ReportID,
@@ -97,12 +111,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             req
         });
 
+        if (!result?.[0]?.IsSuccess) {
+            return res.status(400).json({
+                success: false,
+                message: result?.[0]?.Message || 'Widget oluşturulurken bir hata oluştu',
+                error: 'DUPLICATE_REPORT_ID'
+            });
+        }
+
         return res.status(200).json({
             success: true,
-            message: 'Widget created successfully',
+            message: result[0].Message,
             autoId: result[0].AutoID
         });
-
     } catch (error) {
         console.error('Error in widget creation:', error);
         return res.status(500).json({
