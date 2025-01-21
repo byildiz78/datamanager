@@ -160,7 +160,7 @@ export default function NotificationPanel({
             intervalId = setInterval(() => {
                 if (document.hidden || activeTab !== "dashboard") return;
                 fetchNotifications(false);
-            }, 50000);
+            }, 90000);
         };
 
         startInterval();
