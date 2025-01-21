@@ -66,6 +66,7 @@ import { toZonedTime } from "date-fns-tz";
 import { useExpo } from "@/hooks/use-expo";
 import { useTab } from "@/hooks/use-tab";
 import { useFilterEventStore } from "../stores/filter-event-store";
+import { useDashboardStore } from "@/stores/dashboard-store";
 
 import "flag-icons/css/flag-icons.min.css";
 
@@ -168,6 +169,7 @@ export default function Header() {
   
   const {handleTabOpen } = useTab();
   const { setFilterApplied } = useFilterEventStore();
+  const { isDashboardTab } = useDashboardStore();
 
   React.useEffect(() => {
     if (settings.length > 0) {
@@ -252,8 +254,10 @@ export default function Header() {
       selectedBranches: pendingBranches,
     });
 
-    // Trigger filter applied event
-    setFilterApplied(true);
+    // Sadece dashboard tab'inde isek filtre event'ini tetikle
+    if (isDashboardTab) {
+      setFilterApplied(true);
+    }
   };
 
   const clearSelectedBranches = () => {

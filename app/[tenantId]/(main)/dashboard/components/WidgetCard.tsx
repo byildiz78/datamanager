@@ -77,18 +77,10 @@ const WidgetCard = memo(function WidgetCard({
     const { selectedFilter } = useFilterStore();
     const colorSet = useMemo(() => gradientColors[columnIndex % gradientColors.length], [columnIndex]);
     const { tabs, activeTab } = useTabStore();
-    const { filterApplied, setFilterApplied } = useFilterEventStore();
-
-    const selectedBranches = useMemo(() =>
-        selectedFilter.selectedBranches.length <= 0
-            ? selectedFilter.branches
-            : selectedFilter.selectedBranches,
-        [selectedFilter.selectedBranches, selectedFilter.branches]
-    );
+    const { filterApplied, setFilterApplied, lastAppliedFilter } = useFilterEventStore();
 
     const getReportData = useCallback(async (isInitial = false) => {
         if (activeTab === "dashboard") {
-            if (selectedBranches.length === 0) return;
             try {
                 if (isInitial) {
                     setIsLoading(true);
@@ -98,7 +90,7 @@ const WidgetCard = memo(function WidgetCard({
                 const response = await axios.post("/api/widgetreport", {
                     date1: selectedFilter.date.from,
                     date2: selectedFilter.date.to,
-                    branches: selectedBranches.map((item) => item.BranchID),
+                    branches: selectedFilter.branches.map((item) => item.BranchID),
                     reportId,
                 });
                 if (response.status === 200) {
@@ -115,37 +107,40 @@ const WidgetCard = memo(function WidgetCard({
                 }
             }
         }
-    }, [selectedFilter.date, selectedBranches, reportId, activeTab]);
+    }, [selectedFilter.date, selectedFilter.branches, reportId, activeTab]);
 
+    // İlk yükleme için useEffect
     useEffect(() => {
-        let intervalId: NodeJS.Timeout;
-
-        if (!selectedBranches.length) return;
-
-        // İlk fetch sadece bir kere yapılacak
-        if (!hasFetched && activeTab === "dashboard") {
+        if (activeTab === "dashboard" && !hasFetched) {
             getReportData(true);
         }
+    }, [activeTab]);
+
+    // Sadece uygula butonuna basıldığında tetiklenecek useEffect
+    useEffect(() => {
+        if (filterApplied && activeTab === "dashboard") {
+            getReportData(true);
+            setFilterApplied(false);
+        }
+    }, [filterApplied, activeTab]);
+
+    // Otomatik yenileme için useEffect
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
         
-        // Set interval for subsequent fetches
-        intervalId = setInterval(() => {
-            if (document.hidden || activeTab !== "dashboard") return;
-            getReportData(false);
-        }, REFRESH_INTERVAL);
+        if (activeTab === "dashboard") {
+            intervalId = setInterval(() => {
+                if (document.hidden) return;
+                getReportData(false);
+            }, REFRESH_INTERVAL);
+        }
 
         return () => {
             if (intervalId) {
                 clearInterval(intervalId);
             }
         };
-    }, [getReportData, selectedBranches.length, hasFetched]);
-
-    useEffect(() => {
-        if (filterApplied && activeTab === "dashboard") {
-            getReportData(true);
-            setFilterApplied(false);
-        }
-    }, [filterApplied, activeTab, getReportData]);
+    }, [activeTab]);
 
     const showValue2 = widgetData?.reportValue2 != null &&
         widgetData?.reportValue2 !== undefined &&
