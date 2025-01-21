@@ -8,6 +8,7 @@ import axios, {isAxiosError} from "@/lib/axios";
 
 import { useFilterStore } from "@/stores/filters-store";
 import { useTabStore } from '@/stores/tab-store';
+import { useFilterEventStore } from "@/stores/filter-event-store";
 
 const REFRESH_INTERVAL = 90000;
 
@@ -76,6 +77,7 @@ const WidgetCard = memo(function WidgetCard({
     const { selectedFilter } = useFilterStore();
     const colorSet = useMemo(() => gradientColors[columnIndex % gradientColors.length], [columnIndex]);
     const { tabs, activeTab } = useTabStore();
+    const { filterApplied, setFilterApplied } = useFilterEventStore();
 
     const selectedBranches = useMemo(() =>
         selectedFilter.selectedBranches.length <= 0
@@ -137,6 +139,13 @@ const WidgetCard = memo(function WidgetCard({
             }
         };
     }, [getReportData, selectedBranches.length, hasFetched]);
+
+    useEffect(() => {
+        if (filterApplied && activeTab === "dashboard") {
+            getReportData(true);
+            setFilterApplied(false);
+        }
+    }, [filterApplied, activeTab, getReportData]);
 
     const showValue2 = widgetData?.reportValue2 != null &&
         widgetData?.reportValue2 !== undefined &&

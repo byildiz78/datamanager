@@ -6,6 +6,7 @@ import axios from "@/lib/axios";
 import { WebWidget, WebWidgetData } from "@/types/tables";
 import { useFilterStore } from "@/stores/filters-store";
 import { useWidgetDataStore } from "@/stores/widget-data-store";
+import { useFilterEventStore } from "@/stores/filter-event-store";
 import PulseLoader from "react-spinners/PulseLoader";
 import NotificationPanel from "@/app/[tenantId]/(main)/dashboard/components/NotificationPanel";
 import { Bell, Store } from "lucide-react";
@@ -45,6 +46,7 @@ export default function Dashboard() {
     const { setBranchDatas } = useWidgetDataStore();
     const {tabs, activeTab} = useTabStore();
     const pathname = usePathname();
+    const { filterApplied, setFilterApplied } = useFilterEventStore();
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -158,6 +160,14 @@ export default function Dashboard() {
             }
         };
     }, [fetchData, selectedFilter.branches.length, hasFetched, activeTab]);
+
+    // Listen for filter applied events
+    useEffect(() => {
+        if (filterApplied && activeTab === "dashboard") {
+            fetchData(true);
+            setFilterApplied(false);
+        }
+    }, [filterApplied, activeTab, fetchData]);
 
     // Countdown için ayrı useEffect
     useEffect(() => {
