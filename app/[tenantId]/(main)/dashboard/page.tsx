@@ -7,6 +7,7 @@ import { WebWidget, WebWidgetData } from "@/types/tables";
 import { useFilterStore } from "@/stores/filters-store";
 import { useWidgetDataStore } from "@/stores/widget-data-store";
 import { useFilterEventStore } from "@/stores/filter-event-store";
+import { useDashboardStore } from "@/stores/dashboard-store";
 import PulseLoader from "react-spinners/PulseLoader";
 import NotificationPanel from "@/app/[tenantId]/(main)/dashboard/components/NotificationPanel";
 import { Bell, Store } from "lucide-react";
@@ -45,8 +46,9 @@ export default function Dashboard() {
     const { selectedFilter } = useFilterStore();
     const { setBranchDatas } = useWidgetDataStore();
     const {tabs, activeTab} = useTabStore();
+    const { setIsDashboardTab } = useDashboardStore();
     const pathname = usePathname();
-    const { filterApplied, setFilterApplied } = useFilterEventStore();
+    const { filterApplied, setFilterApplied, lastAppliedFilter } = useFilterEventStore();
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -138,6 +140,12 @@ export default function Dashboard() {
         }
     }, [selectedFilter.selectedBranches, selectedFilter.branches, selectedFilter.date, setBranchDatas]);
 
+    // Tab değişikliğini takip et
+    useEffect(() => {
+        setIsDashboardTab(activeTab === "dashboard");
+    }, [activeTab, setIsDashboardTab]);
+
+    // İlk yükleme ve otomatik yenileme için useEffect
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
@@ -161,15 +169,14 @@ export default function Dashboard() {
         };
     }, [fetchData, selectedFilter.branches.length, hasFetched, activeTab]);
 
-    // Listen for filter applied events
+    // Sadece uygula butonuna basıldığında tetiklenecek useEffect
     useEffect(() => {
         if (filterApplied && activeTab === "dashboard") {
             fetchData(true);
             setFilterApplied(false);
         }
-    }, [filterApplied, activeTab, fetchData]);
+    }, [filterApplied, activeTab]);
 
-    // Countdown için ayrı useEffect
     useEffect(() => {
         const countdownInterval = setInterval(() => {
             if (activeTab === "dashboard") {
