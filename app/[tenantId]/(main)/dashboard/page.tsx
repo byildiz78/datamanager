@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import axios from "@/lib/axios";
 
 import { WebWidget, WebWidgetData } from "@/types/tables";
@@ -19,6 +19,7 @@ import BranchList from "@/app/[tenantId]/(main)/dashboard/components/BranchList"
 import WidgetCard from "./components/WidgetCard";
 import { useTabStore } from "@/stores/tab-store";
 import { usePathname } from "next/navigation";
+import { useCountdown } from "@/hooks/useCountdown";
 
 interface Branch {
     BranchID: string | number;
@@ -40,14 +41,14 @@ export default function Dashboard() {
     const [widgets, setWidgets] = useState<WebWidget[]>([]);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
     const [settingsLoading, setSettingsLoading] = useState(true);
-    const [hasFetched, setHasFetched] = useState(false);
     const { selectedFilter } = useFilterStore();
     const { setBranchDatas } = useWidgetDataStore();
     const {tabs, activeTab} = useTabStore();
     const { setIsDashboardTab } = useDashboardStore();
     const pathname = usePathname();
     const { filterApplied, setFilterApplied } = useFilterEventStore();
-    const { countdown, shouldFetch, setCountdown, setShouldFetch } = useRefreshStore();
+    const { setShouldFetch, shouldFetch } = useRefreshStore();
+    const [hasFetched, setHasFetched] = useState(false);
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -107,6 +108,8 @@ export default function Dashboard() {
     }, [pathname]);
 
     const fetchData = useCallback(async (isInitial = false) => {
+        if (activeTab !== "dashboard" || document.hidden) return;
+
         const branches =
             selectedFilter.selectedBranches.length <= 0
                 ? selectedFilter.branches
@@ -129,83 +132,42 @@ export default function Dashboard() {
                     }
                 )
                 setBranchDatas(response.data);
-                if (!isInitial) {
-                    setCountdown(REFRESH_INTERVAL / 1000);
-                }
                 setHasFetched(true);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
         }
-    }, [selectedFilter.selectedBranches, selectedFilter.branches, selectedFilter.date, setBranchDatas]);
+    }, [selectedFilter.selectedBranches, selectedFilter.branches, selectedFilter.date, setBranchDatas, activeTab]);
 
-    // Tab değişikliğini takip et
+    useEffect(() => {
+        if (activeTab !== "dashboard" || document.hidden) return;
+
+        // İlk yükleme durumu
+        if (!hasFetched && selectedFilter.branches.length > 0) {
+            fetchData(true);
+            return;
+        }
+
+        // Filtre değişikliği veya yenileme durumu
+        if (hasFetched && (filterApplied || shouldFetch)) {
+            fetchData(false);
+            if (filterApplied) setFilterApplied(false);
+            if (shouldFetch) setShouldFetch(false);
+        }
+    }, [
+        activeTab,
+        hasFetched,
+        selectedFilter,
+        filterApplied,
+        shouldFetch,
+        fetchData,
+        setFilterApplied,
+        setShouldFetch
+    ]);
+
     useEffect(() => {
         setIsDashboardTab(activeTab === "dashboard");
     }, [activeTab, setIsDashboardTab]);
-
-    // İlk yükleme ve otomatik yenileme için useEffect
-    useEffect(() => {
-        let intervalId: NodeJS.Timeout;
-
-        if (!selectedFilter.branches.length) return;
-
-        // İlk fetch sadece bir kere yapılacak
-        if (!hasFetched && activeTab === "dashboard") {
-            fetchData(true);
-        }
-
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [fetchData, selectedFilter.branches.length, hasFetched, activeTab]);
-
-    // Countdown için useEffect
-    useEffect(() => {
-        let countdownInterval: NodeJS.Timeout;
-
-        if (activeTab === "dashboard") {
-            countdownInterval = setInterval(() => {
-                setCountdown((prev) => {
-                    const newCount = prev > 0 ? prev - 1 : REFRESH_INTERVAL / 1000;
-                    // Son 5 saniyede veya 0 olduğunda veri çekme işaretini set et
-                    if (newCount <= 6) {
-                        setShouldFetch(true);
-                    }
-                    return newCount;
-                });
-            }, 1000);
-        } else {
-            // Dashboard tab'inde değilken sayacı sıfırla
-            setCountdown(REFRESH_INTERVAL / 1000);
-        }
-
-        return () => {
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-            }
-        };
-    }, [activeTab, setCountdown, setShouldFetch]);
-
-    // Veri çekme için useEffect
-    useEffect(() => {
-        if (shouldFetch && activeTab === "dashboard" && !document.hidden) {
-            fetchData(false);
-            setShouldFetch(false);
-            // Sayacı sıfırla
-            setCountdown(REFRESH_INTERVAL / 1000);
-        }
-    }, [shouldFetch, activeTab, fetchData]);
-
-    // Sadece uygula butonuna basıldığında tetiklenecek useEffect
-    useEffect(() => {
-        if (filterApplied && activeTab === "dashboard") {
-            fetchData(true);
-            setFilterApplied(false);
-        }
-    }, [filterApplied, activeTab]);
 
     useEffect(() => {
         fetchSettings();
@@ -227,6 +189,18 @@ export default function Dashboard() {
 
         fetchWidgetsData();
     }, []);
+
+    const handleCountdownTick = useCallback((value: number) => {
+        if (value === 5) {
+            setShouldFetch(true);
+        }
+    }, [setShouldFetch]);
+
+    const count = useCountdown(
+        REFRESH_INTERVAL / 1000,
+        activeTab === "dashboard",
+        handleCountdownTick
+    );
 
     return (
         <div className="h-full flex">
@@ -264,7 +238,7 @@ export default function Dashboard() {
                                 <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
                             </svg>
                         </div>
-                        <span className="font-medium w-4 text-center">{countdown}</span>
+                        <span className="font-medium w-4 text-center">{count}</span>
                         <span>saniye</span>
                     </div>
                 </div>
