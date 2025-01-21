@@ -9,8 +9,7 @@ import axios, {isAxiosError} from "@/lib/axios";
 import { useFilterStore } from "@/stores/filters-store";
 import { useTabStore } from '@/stores/tab-store';
 import { useFilterEventStore } from "@/stores/filter-event-store";
-
-const REFRESH_INTERVAL = 90000;
+import { useRefreshStore } from "@/stores/refresh-store";
 
 const gradientColors = [
     {
@@ -77,10 +76,17 @@ const WidgetCard = memo(function WidgetCard({
     const { selectedFilter } = useFilterStore();
     const colorSet = useMemo(() => gradientColors[columnIndex % gradientColors.length], [columnIndex]);
     const { tabs, activeTab } = useTabStore();
-    const { filterApplied, setFilterApplied, lastAppliedFilter } = useFilterEventStore();
+    const { filterApplied, setFilterApplied } = useFilterEventStore();
+    const { shouldFetch, setShouldFetch } = useRefreshStore();
 
     const getReportData = useCallback(async (isInitial = false) => {
         if (activeTab === "dashboard") {
+            const branches = selectedFilter.selectedBranches.length > 0
+                ? selectedFilter.selectedBranches
+                : selectedFilter.branches;
+
+            if (!branches || branches.length === 0) return;
+
             try {
                 if (isInitial) {
                     setIsLoading(true);
@@ -90,7 +96,7 @@ const WidgetCard = memo(function WidgetCard({
                 const response = await axios.post("/api/widgetreport", {
                     date1: selectedFilter.date.from,
                     date2: selectedFilter.date.to,
-                    branches: selectedFilter.branches.map((item) => item.BranchID),
+                    branches: branches.map((item) => item.BranchID),
                     reportId,
                 });
                 if (response.status === 200) {
@@ -107,40 +113,45 @@ const WidgetCard = memo(function WidgetCard({
                 }
             }
         }
-    }, [selectedFilter.date, selectedFilter.branches, reportId, activeTab]);
+    }, [selectedFilter.date, selectedFilter.branches, selectedFilter.selectedBranches, reportId, activeTab]);
 
-    // İlk yükleme için useEffect
+    // İlk yükleme ve diğer durumlar için tek useEffect
     useEffect(() => {
-        if (activeTab === "dashboard" && !hasFetched) {
+        if (activeTab !== "dashboard" || document.hidden) return;
+
+        const branches = selectedFilter.selectedBranches.length > 0
+            ? selectedFilter.selectedBranches
+            : selectedFilter.branches;
+
+        if (!branches || branches.length === 0) return;
+
+        // İlk yükleme
+        if (!hasFetched) {
             getReportData(true);
-        }
-    }, [activeTab]);
-
-    // Sadece uygula butonuna basıldığında tetiklenecek useEffect
-    useEffect(() => {
-        if (filterApplied && activeTab === "dashboard") {
-            getReportData(true);
-            setFilterApplied(false);
-        }
-    }, [filterApplied, activeTab]);
-
-    // Otomatik yenileme için useEffect
-    useEffect(() => {
-        let intervalId: NodeJS.Timeout;
-        
-        if (activeTab === "dashboard") {
-            intervalId = setInterval(() => {
-                if (document.hidden) return;
-                getReportData(false);
-            }, REFRESH_INTERVAL);
+            return;
         }
 
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
+        // Filtre değişimi veya yenileme
+        if (shouldFetch || filterApplied) {
+            getReportData(false);
+            if (filterApplied) {
+                setFilterApplied(false);
             }
-        };
-    }, [activeTab]);
+            if (shouldFetch) {
+                setShouldFetch(false);
+            }
+        }
+    }, [
+        activeTab,
+        hasFetched,
+        shouldFetch,
+        filterApplied,
+        getReportData,
+        setFilterApplied,
+        setShouldFetch,
+        selectedFilter.branches,
+        selectedFilter.selectedBranches
+    ]);
 
     const showValue2 = widgetData?.reportValue2 != null &&
         widgetData?.reportValue2 !== undefined &&

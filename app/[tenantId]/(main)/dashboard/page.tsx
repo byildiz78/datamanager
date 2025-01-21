@@ -8,6 +8,7 @@ import { useFilterStore } from "@/stores/filters-store";
 import { useWidgetDataStore } from "@/stores/widget-data-store";
 import { useFilterEventStore } from "@/stores/filter-event-store";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { useRefreshStore, REFRESH_INTERVAL } from "@/stores/refresh-store";
 import PulseLoader from "react-spinners/PulseLoader";
 import NotificationPanel from "@/app/[tenantId]/(main)/dashboard/components/NotificationPanel";
 import { Bell, Store } from "lucide-react";
@@ -18,8 +19,6 @@ import BranchList from "@/app/[tenantId]/(main)/dashboard/components/BranchList"
 import WidgetCard from "./components/WidgetCard";
 import { useTabStore } from "@/stores/tab-store";
 import { usePathname } from "next/navigation";
-
-const REFRESH_INTERVAL = 90000; // 90 seconds in milliseconds
 
 interface Branch {
     BranchID: string | number;
@@ -39,7 +38,6 @@ const DEFAULT_SETTINGS: Settings = {
 
 export default function Dashboard() {
     const [widgets, setWidgets] = useState<WebWidget[]>([]);
-    const [countdown, setCountdown] = useState(REFRESH_INTERVAL / 1000);
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [hasFetched, setHasFetched] = useState(false);
@@ -48,7 +46,8 @@ export default function Dashboard() {
     const {tabs, activeTab} = useTabStore();
     const { setIsDashboardTab } = useDashboardStore();
     const pathname = usePathname();
-    const { filterApplied, setFilterApplied, lastAppliedFilter } = useFilterEventStore();
+    const { filterApplied, setFilterApplied } = useFilterEventStore();
+    const { countdown, shouldFetch, setCountdown, setShouldFetch } = useRefreshStore();
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -155,12 +154,6 @@ export default function Dashboard() {
         if (!hasFetched && activeTab === "dashboard") {
             fetchData(true);
         }
-        
-        // Set interval for subsequent fetches
-        intervalId = setInterval(() => {
-            if (document.hidden || activeTab !== "dashboard") return;
-            fetchData(false);
-        }, REFRESH_INTERVAL);
 
         return () => {
             if (intervalId) {
@@ -169,6 +162,43 @@ export default function Dashboard() {
         };
     }, [fetchData, selectedFilter.branches.length, hasFetched, activeTab]);
 
+    // Countdown için useEffect
+    useEffect(() => {
+        let countdownInterval: NodeJS.Timeout;
+
+        if (activeTab === "dashboard") {
+            countdownInterval = setInterval(() => {
+                setCountdown((prev) => {
+                    const newCount = prev > 0 ? prev - 1 : REFRESH_INTERVAL / 1000;
+                    // Son 5 saniyede veya 0 olduğunda veri çekme işaretini set et
+                    if (newCount <= 6) {
+                        setShouldFetch(true);
+                    }
+                    return newCount;
+                });
+            }, 1000);
+        } else {
+            // Dashboard tab'inde değilken sayacı sıfırla
+            setCountdown(REFRESH_INTERVAL / 1000);
+        }
+
+        return () => {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+        };
+    }, [activeTab, setCountdown, setShouldFetch]);
+
+    // Veri çekme için useEffect
+    useEffect(() => {
+        if (shouldFetch && activeTab === "dashboard" && !document.hidden) {
+            fetchData(false);
+            setShouldFetch(false);
+            // Sayacı sıfırla
+            setCountdown(REFRESH_INTERVAL / 1000);
+        }
+    }, [shouldFetch, activeTab, fetchData]);
+
     // Sadece uygula butonuna basıldığında tetiklenecek useEffect
     useEffect(() => {
         if (filterApplied && activeTab === "dashboard") {
@@ -176,23 +206,6 @@ export default function Dashboard() {
             setFilterApplied(false);
         }
     }, [filterApplied, activeTab]);
-
-    useEffect(() => {
-        const countdownInterval = setInterval(() => {
-            if (activeTab === "dashboard") {
-                setCountdown((prevCount) => {
-                    if (prevCount <= 1) {
-                        return REFRESH_INTERVAL / 1000;
-                    }
-                    return prevCount - 1;
-                });
-            }
-        }, 1000);
-
-        return () => {
-            clearInterval(countdownInterval);
-        };
-    }, [activeTab]);
 
     useEffect(() => {
         fetchSettings();
@@ -213,19 +226,6 @@ export default function Dashboard() {
         };
 
         fetchWidgetsData();
-
-        const countdownInterval = setInterval(() => {
-            setCountdown((prevCount) => {
-                if (prevCount <= 1) {
-                    return REFRESH_INTERVAL / 1000;
-                }
-                return prevCount - 1;
-            });
-        }, 1000);
-
-        return () => {
-            clearInterval(countdownInterval);
-        };
     }, []);
 
     return (
