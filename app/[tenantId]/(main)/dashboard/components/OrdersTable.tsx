@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Loader2, Utensils, User2, Package, ShoppingBag, Store, Phone } from "lucide-react";
 import { WebWidget, WebWidgetData } from "@/types/tables";
+import axios  from "@/lib/axios";
 
 interface OrdersTableProps {
   selectedBranch: {
@@ -52,8 +53,8 @@ export default function OrdersTable({ selectedBranch, startDate, endDate }: Orde
   useEffect(() => {
     const fetchTableWidget = async () => {
       try {
-        const response = await fetch('/api/datatablewidgets');
-        const widgets = await response.json();
+        const response = await axios.get('/api/datatablewidgets');
+        const widgets = await response.data;
         const dataTableWidget = widgets.find((w: WebWidget) => w.ReportType === 'datatable');
         if (dataTableWidget) {
           setTableWidget(dataTableWidget);
@@ -79,25 +80,19 @@ export default function OrdersTable({ selectedBranch, startDate, endDate }: Orde
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/widgetreport', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            date1: startDate.toISOString(),
-            date2: endDate.toISOString(),
-            reportId: tableWidget.ReportID,
-            branches: [selectedBranch.BranchID]
-          })
+        const response = await axios.post("/api/widgetreport", {
+          date1: startDate.toISOString(),
+          date2: endDate.toISOString(),
+          reportId: tableWidget.ReportID,
+          branches: [selectedBranch.BranchID]
         });
 
-        if (!response.ok) {
+        if (!response) {
           setTableData([]);
           return;
         }
-
-        const data = await response.json();
+        
+        const data = await response.data;
         setTableData(data);
       } catch (error) {
         console.error('Error fetching table data:', error);

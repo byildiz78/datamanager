@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import * as LucideIcons from "lucide-react";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import axios from "@/lib/axios";
 
 interface WebWidget {
   AutoID: number;
@@ -35,8 +36,8 @@ export default function BranchStats({ selectedBranch, startDate, endDate }: Bran
   useEffect(() => {
     const fetchWidgets = async () => {
       try {
-        const response = await fetch('/api/branchdetailwidgets');
-        const data: WebWidget[] = await response.json();
+        const response = await axios.get('/api/branchdetailwidgets');
+        const data: WebWidget[] = await response.data;
         
         const initialStates: WidgetData[] = data.map(widget => ({
           widget,
@@ -48,26 +49,19 @@ export default function BranchStats({ selectedBranch, startDate, endDate }: Bran
         data.forEach(async (widget, index) => {
           if (widget.ReportID && startDate && endDate) {
             try {
-              const params = {
+        
+              const response = await axios.post("/api/widgetreport", {
                 date1: startDate.toISOString(),
                 date2: endDate.toISOString(),
                 reportId: widget.ReportID,
                 branches: [selectedBranch.BranchID]
-              };
+            });
 
-              const response = await fetch('/api/widgetreport', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(params)
-              });
-
-              if (!response.ok) {
+              if (!response) {
                 throw new Error('API response was not ok');
               }
 
-              const reportData = await response.json();
+              const reportData = await response.data;
               
               setWidgetStates(prevStates => {
                 const newStates = [...prevStates];

@@ -7,6 +7,7 @@ import {
   Line, LineChart, ResponsiveContainer, Tooltip, XAxis,
   YAxis, PieChart, Pie, Cell, LabelList
 } from "recharts";
+import axios from "@/lib/axios";
 
 interface ChartWidget {
   AutoID: number;
@@ -49,9 +50,9 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
   useEffect(() => {
     const fetchCharts = async () => {
       try {
-        const response = await fetch('/api/chartwidgets');
-        const data: ChartWidget[] = await response.json();
-        
+        const response = await axios.get('/api/chartwidgets');
+        const data: ChartWidget[] = await response.data;
+
         const initialStates: ChartData[] = data.map(widget => ({
           widget,
           loading: true,
@@ -62,27 +63,20 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
         data.forEach(async (widget, index) => {
           if (widget.ReportID && startDate && endDate) {
             try {
-              const params = {
+
+              const response = await axios.post("/api/widgetreport", {
                 date1: startDate.toISOString(),
                 date2: endDate.toISOString(),
                 reportId: widget.ReportID,
                 branches: [selectedBranch.BranchID]
-              };
-
-              const response = await fetch('/api/widgetreport', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(params)
               });
 
-              if (!response.ok) {
+              if (!response) {
                 throw new Error('API response was not ok');
               }
 
-              const reportData = await response.json();
-              
+              const reportData = await response.data;
+
               setChartStates(prevStates => {
                 const newStates = [...prevStates];
                 newStates[index] = {
@@ -128,7 +122,7 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
     }).format(value);
   };
 
-  const renderCompactValue = (value: number) => 
+  const renderCompactValue = (value: number) =>
     new Intl.NumberFormat('tr-TR', {
       style: 'currency',
       currency: 'TRY',
@@ -136,7 +130,7 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
       maximumFractionDigits: 0
     }).format(value);
 
-  const renderPercentage = (value: number) => 
+  const renderPercentage = (value: number) =>
     `%${value.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}`;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -187,14 +181,14 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
       ];
 
       return (
-        <motion.div 
+        <motion.div
           className="h-[200px] sm:h-[250px] w-full"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
+            <BarChart
               data={data}
               margin={{ top: 20, right: 10, left: 0, bottom: 20 }}
               barSize={35}
@@ -208,12 +202,12 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="name"
                 tick={{ fill: '#6b7280', fontSize: 12 }}
                 axisLine={{ stroke: '#e5e7eb' }}
               />
-              <YAxis 
+              <YAxis
                 tickFormatter={renderCompactValue}
                 tick={{ fill: '#6b7280', fontSize: 12 }}
                 axisLine={{ stroke: '#e5e7eb' }}
@@ -221,16 +215,16 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                 {data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
+                  <Cell
+                    key={`cell-${index}`}
                     fill={`url(#gradient-${index})`}
                   />
                 ))}
-                <LabelList 
+                <LabelList
                   dataKey="value"
                   position="top"
                   formatter={renderCompactValue}
-                  style={{ 
+                  style={{
                     fill: '#6b7280',
                     fontSize: '12px',
                     fontWeight: '500'
@@ -249,9 +243,9 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
       const chartHeight = isMobile ? 300 : 250;
       const outerRadius = isMobile ? 80 : 100;
       const innerRadius = isMobile ? 40 : 60;
-      
+
       return (
-        <motion.div 
+        <motion.div
           className="h-[300px] sm:h-[250px] w-full"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -284,13 +278,13 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
                 }}
               >
                 {chartState.data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
+                  <Cell
+                    key={`cell-${index}`}
                     fill={`url(#pie-gradient-${index})`}
                   />
                 ))}
               </Pie>
-              <Tooltip 
+              <Tooltip
                 content={<CustomTooltip />}
                 wrapperStyle={{ zIndex: 1000 }}
               />
@@ -328,7 +322,7 @@ export default function BranchCharts({ selectedBranch, startDate, endDate }: Bra
             </div>
 
             <div className="relative p-4">
-              <motion.div 
+              <motion.div
                 className="flex items-center justify-between mb-4"
                 animate={{ y: hoveredCard === index ? -5 : 0 }}
                 transition={{ duration: 0.3 }}

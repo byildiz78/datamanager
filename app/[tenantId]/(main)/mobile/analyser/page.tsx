@@ -18,6 +18,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { AnalysisStages } from './components/analysis-stages';
 import { AnalysisTypeGrid } from './components/analysis-type-grid';
 import { AnimatedHeader } from './components/animated-header';
+import axios from '@/lib/axios';
 
 export default function MobileChatBotComponent() {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -38,9 +39,9 @@ export default function MobileChatBotComponent() {
     useEffect(() => {
         const fetchMenuItems = async () => {
             try {
-                const response = await fetch('/api/ai/analyser_menu_items');
-                if (!response.ok) throw new Error('Failed to fetch menu items');
-                const data = await response.json();
+                const response = await axios.get('/api/ai/analyser_menu_items');
+                if (!response) throw new Error('Failed to fetch menu items');
+                const data = await response.data;
 
                 const transformedItems = data.map((item: ChatBot) => {
                     const IconComponent = (LucideIcons as any)[item.Icon] || LucideIcons.HandCoins;
@@ -80,96 +81,70 @@ export default function MobileChatBotComponent() {
         setRawData(null);
         setBalanceData(null);
         setSelectedMenu(menuId);
-        setStep('result');
+        setStep('result'); 
         setAnalysisStage('preparing');
 
         try {
-
-
-            setAnalysisStage('querying');
-
-            const response = await fetch('/api/ai/analyser', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream'
-                },
-                body: JSON.stringify({
-                    ChatBotID: menuId,
-                    date1: selectedFilter.date.from,
-                    date2: selectedFilter.date.to,
-                    branches: selectedFilter.selectedBranches.length > 0 
-                        ? selectedFilter.selectedBranches.map(item => item.BranchID) 
-                        : selectedFilter.branches.map(item => item.BranchID) || []
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API error:', errorText);
-                throw new Error(`Analysis failed: ${response.status} ${errorText}`);
-            }
-
-            if (!response.body) {
-                throw new Error('Response body is null');
-            }
-
-            const reader = response.body.getReader();
             setMessages([{ role: 'assistant', content: '' }]);
-            let firstMessageReceived = false;
+            let accumulatedData = '';
 
             setAnalysisStage('analyzing');
 
-            const textDecoder = new TextDecoder();
-            let buffer = '';
+            const response = await axios.post("/api/ai/analyser", {
+                ChatBotID: menuId,
+                date1: selectedFilter.date.from,
+                date2: selectedFilter.date.to,
+                branches: selectedFilter.selectedBranches.length > 0 
+                    ? selectedFilter.selectedBranches.map(item => item.BranchID) 
+                    : selectedFilter.branches.map(item => item.BranchID) || []
+            }, {
+                responseType: 'text',
+                onDownloadProgress: (progressEvent) => {
+                    const newData = progressEvent.event.target.responseText.slice(accumulatedData.length);
+                    accumulatedData = progressEvent.event.target.responseText;
+                    
+                    const lines = newData.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonData = JSON.parse(line.slice(6));
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    setAnalysisStage('complete');
-                    break;
-                }
+                                if (jsonData.balance) {
+                                    setBalanceData(jsonData.balance);
+                                    setAnalysisStage('complete');
+                                } else {
+                                    if (jsonData.rawData) {
+                                        setRawData(jsonData.rawData);
+                                    }
 
-                const chunk = textDecoder.decode(value, { stream: true });
-                buffer += chunk;
-
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.slice(6));
-
-                            if (data.balance) {
-                                setBalanceData(data.balance);
-                            } else {
-                                if (!firstMessageReceived && data.rawData) {
-                                    setRawData(data.rawData);
+                                    if (jsonData.content) {
+                                        setIsLoading(false);
+                                        setMessages(prev => [{
+                                            role: 'assistant',
+                                            content: prev[0].content + (jsonData.content || '')
+                                        }]);
+                                    }
                                 }
-
-                                if (!firstMessageReceived && data.content) {
-                                    firstMessageReceived = true;
-                                    setIsLoading(false);
-                                }
-
-                                setMessages(prev => [{
-                                    ...prev[0],
-                                    content: prev[0].content + (data.content || '')
-                                }]);
+                            } catch (e) {
+                                console.error('Error parsing SSE message:', e);
                             }
-                        } catch (parseError) {
-                            console.error('Error parsing SSE data:', parseError);
                         }
                     }
                 }
+            });
+
+            if (response.status !== 200) {
+                throw new Error('Analysis failed');
             }
         } catch (error) {
             setError(error instanceof Error ? error.message : 'An error occurred');
         } finally {
             setIsLoading(false);
+            setAnalysisStage('complete');
         }
     };
+
 
     return (
         <div ref={containerRef} className="flex flex-col bg-gray-50 dark:bg-slate-900">
@@ -245,8 +220,8 @@ export default function MobileChatBotComponent() {
                 </div>
             )}
             {step === 'result' && (
-                <div className="flex flex-col">
-                    <div className="p-4 space-y-6">
+                <div className="flex flex-col h-full">
+                    <div className="flex-1 p-4 space-y-4">
                         {error ? (
                             <div className="flex flex-col items-center justify-center h-full gap-4 text-destructive">
                                 <svg
@@ -271,11 +246,11 @@ export default function MobileChatBotComponent() {
                                 </div>
                             </div>
                         ) : isLoading ? (
-                            <div className="p-4">
+                            <div className="flex justify-center w-full">
                                 <AnalysisStages currentStage={analysisStage} />
                             </div>
                         ) : (
-                            <div className="flex-1 overflow-auto p-4" ref={containerRef}>
+                            <div className="flex flex-col space-y-4">
                                 {messages.map((message, index) => (
                                     <MessageContent key={index} content={message.content} />
                                 ))}
