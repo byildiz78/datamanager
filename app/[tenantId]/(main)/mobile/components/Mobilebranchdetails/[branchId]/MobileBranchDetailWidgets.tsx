@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import * as LucideIcons from "lucide-react";
 import { useEffect, useState } from "react";
+import axios from "@/lib/axios";
 
 interface WebWidget {
   AutoID: number;
@@ -19,8 +20,8 @@ export default function BranchDetailWidgets() {
   useEffect(() => {
     const fetchWidgets = async () => {
       try {
-        const response = await fetch('/api/branchdetailwidgets');
-        const data = await response.json();
+        const response = await axios.get('/api/branchdetailwidgets');
+        const data = await response.data;
         setWidgets(data);
       } catch (error) {
         console.error('Error fetching widgets:', error);

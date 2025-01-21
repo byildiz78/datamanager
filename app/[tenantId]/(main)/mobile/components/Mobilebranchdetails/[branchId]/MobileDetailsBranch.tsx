@@ -27,6 +27,7 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command";
+import axios from "@/lib/axios";
 
 interface BranchData {
     id: string;
@@ -98,8 +99,8 @@ export default function DetailsBranch({ branchData, allBranches, onBack }: Detai
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const response = await fetch('/api/efr_branches');
-                const data = await response.json();
+                const response = await axios.get('/api/efr_branches');
+                const data = await response.data;
                 setAvailableBranches(data);
             } catch (error) {
                 console.error('Error fetching branches:', error);

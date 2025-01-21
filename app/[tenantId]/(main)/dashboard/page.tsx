@@ -303,7 +303,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="fixed bottom-4 right-4 lg:hidden z-40">
+            {/* <div className="fixed bottom-4 right-4 lg:hidden z-40">
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button size="icon" className="rounded-full h-12 w-12">
@@ -324,7 +324,7 @@ export default function Dashboard() {
                         />
                     </SheetContent>
                 </Sheet>
-            </div>
+            </div> */}
         </div>
     );
 }

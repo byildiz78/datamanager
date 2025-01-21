@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useSettingsStore } from "@/stores/settings-store";
 import { PulseLoader } from "react-spinners";
+import axios from "@/lib/axios";
 
 interface BranchData {
     id: string;
@@ -148,8 +149,8 @@ export default function DetailsBranch({ branchData, allBranches }: DetailsClient
             setIsLoading(true);
             setBranchDataReady(false);
             
-            const response = await fetch('/api/efr_branches');
-            const data = await response.json();
+            const response = await axios.get('/api/efr_branches');
+            const data = await response.data;
             setAvailableBranches(data);
             
             if (branchData?.id) {
@@ -249,7 +250,7 @@ export default function DetailsBranch({ branchData, allBranches }: DetailsClient
                         dark:[&::-webkit-scrollbar-thumb]:bg-gray-700/50
                         hover:[&::-webkit-scrollbar-thumb]:bg-gray-300/80
                         dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700/80">
-            <div className="mx-auto space-y-6 py-6">
+            <div className="mx-auto space-y-8 py-10">
                 <Card className="p-3 sm:p-4 border-2 border-border/60 rounded-xl shadow-lg hover:border-border/80 transition-all duration-300">
                     <div className="flex flex-col gap-4 sm:gap-6">
                         <div className="flex items-center gap-3 sm:gap-4">
@@ -417,7 +418,7 @@ export default function DetailsBranch({ branchData, allBranches }: DetailsClient
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="space-y-6"
+                        className="flex flex-col h-full space-y-6 p-4 md:p-2 pt-6"
                     >
                         <BranchStats 
                             selectedBranch={currentBranch} 
