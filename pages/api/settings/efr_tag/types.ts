@@ -3,4 +3,5 @@ export type Efr_Tags = {
     TagTitle: string;
     IsDefault: boolean;
     CurrencyName: string;
+    BranchID: number[];
 }
