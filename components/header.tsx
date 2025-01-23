@@ -238,6 +238,7 @@ export default function Header() {
   }, [selectedFilter.date.from, selectedFilter.date.to, activeTab]);
 
   const applyFilters = () => {
+    
     if (tempStartDate) {
       const [hours, minutes] = tempStartTime.split(':');
       const newStartDate = new Date(tempStartDate);
@@ -251,6 +252,9 @@ export default function Header() {
       newEndDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       handleEndDateSelect(newEndDate);
     }
+
+    // Branch ID'lerini topla
+    const branchIDs = pendingBranches.map(branch => branch.BranchID);
 
     setFilter({
       ...selectedFilter,
@@ -535,7 +539,7 @@ export default function Header() {
                       )}
                     >
                       {selectedFilter.selectedTags.length > 0 
-                        ? selectedFilter.selectedTags[0].TagTitle
+                        ? `${selectedFilter.selectedTags.length} ${t.tags}`
                         : pendingBranches.length > 0
                         ? `${pendingBranches.length} ${t.branchesSelected}`
                         : t.allBranches}
@@ -568,15 +572,24 @@ export default function Header() {
                                 className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent/50 rounded-md"
                                 onSelect={() => {
                                   handleTagSelect(tag);
-                                  // Tag'e ait şubeleri pendingBranches'a setle
-                                  if (!selectedFilter.selectedTags.some(t => t.TagID === tag.TagID)) {
-                                    const tagBranches = selectedFilter.branches.filter(branch => 
-                                      tag.BranchID.includes(branch.BranchID)
-                                    );
-                                    setPendingBranches(tagBranches);
-                                  } else {
-                                    setPendingBranches([]); // Tag seçimi kaldırıldığında pendingBranches'ı temizle
-                                  }
+                                  
+                                  // Seçili tüm tag'lerin branch'larını topla
+                                  const allSelectedTags = !selectedFilter.selectedTags.some(t => t.TagID === tag.TagID)
+                                    ? [...selectedFilter.selectedTags, tag]  // Yeni tag ekleniyor
+                                    : selectedFilter.selectedTags.filter(t => t.TagID !== tag.TagID);  // Tag kaldırılıyor
+
+
+                                  // Tüm seçili tag'lerin BranchID'lerini topla
+                                  const allBranchIDs = allSelectedTags.reduce((ids: string[], tag) => {
+                                    return [...ids, ...tag.BranchID];
+                                  }, []);
+
+                                  // Bu BranchID'lere sahip tüm branch'ları seç
+                                  const selectedBranches = selectedFilter.branches.filter(branch =>
+                                    allBranchIDs.includes(branch.BranchID)
+                                  );
+
+                                  setPendingBranches(selectedBranches);
                                 }}
                               >
                                 <Checkbox

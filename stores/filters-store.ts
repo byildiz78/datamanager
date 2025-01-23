@@ -47,10 +47,15 @@ export const useFilterStore = create<FilterStore>((set) => ({
 
   setFilter: (filter: FilterState) =>
     set((state) => {
-      // Eğer seçili tag varsa, sadece o tag'in branch'lerini kullan
+
+      // Tüm seçili tag'lerin branch'larını birleştir
+      const allBranchIDs = filter.selectedTags?.reduce((ids: string[], tag) => {
+        return [...ids, ...tag.BranchID];
+      }, []) || [];
+
       const effectiveBranches = filter.selectedTags?.length > 0
         ? filter.selectedBranches.filter(branch =>
-            filter.selectedTags[0].BranchID.includes(branch.BranchID)
+            allBranchIDs.includes(branch.BranchID)
           )
         : filter.selectedBranches;
 
@@ -65,9 +70,8 @@ export const useFilterStore = create<FilterStore>((set) => ({
       };
 
       // Tab store'u güncelle
-      const activeTab = useTabStore.getState().activeTab;
-      if (activeTab) {
-        useTabStore.getState().setTabFilter(activeTab, newState.selectedFilter);
+      if (useTabStore.getState().activeTab) {
+        useTabStore.getState().setTabFilter(useTabStore.getState().activeTab, newState.selectedFilter);
       }
 
       return newState;
@@ -233,33 +237,33 @@ export const useFilterStore = create<FilterStore>((set) => ({
     }),
   handleTagSelect: (tag: Efr_Tags) =>
     set((state) => {
+      let newSelectedTags;
+      
       // Eğer tag zaten seçiliyse, seçimi kaldır
       if (state.selectedFilter.selectedTags.some(t => t.TagID === tag.TagID)) {
-        const newState = {
-          selectedFilter: {
-            ...state.selectedFilter,
-            selectedTags: [],
-            selectedBranches: [], // Seçili şubeleri temizle
-          }
-        };
-        if (useTabStore.getState().activeTab) {
-          useTabStore.getState().setTabFilter(useTabStore.getState().activeTab, newState.selectedFilter);
-        }
-        return newState;
+        newSelectedTags = state.selectedFilter.selectedTags.filter(t => t.TagID !== tag.TagID);
+      } else {
+        // Tag seçili değilse, seçili tag'lere ekle
+        newSelectedTags = [...state.selectedFilter.selectedTags, tag];
       }
 
-      // Tag'e ait şubeleri bul
-      const tagBranches = state.selectedFilter.branches.filter(branch => 
-        tag.BranchID.includes(branch.BranchID)
+      // Tüm seçili tag'lerin BranchID'lerini bir dizide topla
+      const allBranchIDs = newSelectedTags.reduce((ids: string[], tag) => {
+        return [...ids, ...tag.BranchID];
+      }, []);
+
+      // Bu BranchID'lere sahip tüm branch'ları seç
+      const selectedBranches = state.selectedFilter.branches.filter(branch =>
+        allBranchIDs.includes(branch.BranchID)
       );
 
       // Yeni state'i oluştur
       const newState = {
         selectedFilter: {
           ...state.selectedFilter,
-          selectedBranches: tagBranches,
-          selectedTags: [tag],
-        }
+          selectedTags: newSelectedTags,
+          selectedBranches: selectedBranches
+        },
       };
 
       // Tab store'u güncelle
