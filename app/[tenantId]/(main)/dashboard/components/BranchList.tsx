@@ -6,7 +6,7 @@ import PulseLoader from "react-spinners/PulseLoader";
 import BranchCard from "./BranchCard";
 import { WebWidgetData } from "@/types/tables";
 
-// Transform BranchModel to BranchData
+// Transform BranchModel to BranchData - Bileşen dışına taşındı
 const transformBranchData = (data: WebWidgetData) => {
     const currentValue = data.reportValue2 || 0;
     const previousValue = data.reportValue3 || 0;
@@ -26,8 +26,18 @@ const transformBranchData = (data: WebWidgetData) => {
     };
 };
 
-export default function BranchList() {
+const BranchList: React.FC = () => {
     const { branchDatas } = useWidgetDataStore();
+
+    const transformedData = React.useMemo(() => 
+        branchDatas?.map(data => data ? transformBranchData(data) : null).filter(Boolean) ?? [],
+        [branchDatas]
+    );
+
+    const maxValue = React.useMemo(() => 
+        Math.max(...(branchDatas?.map(data => data?.reportValue2 || 0) ?? [])),
+        [branchDatas]
+    );
 
     if (!branchDatas || branchDatas.length === 0) {
         return (
@@ -38,20 +48,20 @@ export default function BranchList() {
         );
     }
 
-    // En yüksek ciro değerini bul
-    const maxValue = Math.max(...branchDatas.map(data => data?.reportValue2 || 0));
-
     return (
         <div className="w-full">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-                {branchDatas.map((branchData, index) => {
-                    if (!branchData) return null;
-                    const transformedData = transformBranchData(branchData);
-                    return (
-                        <BranchCard key={branchData.BranchID} data={transformedData} index={index} maxValue={maxValue} />
-                    );
-                })}
+                {transformedData.map((branchData, index) => (
+                    <BranchCard 
+                        key={branchData.id} 
+                        data={branchData} 
+                        index={index} 
+                        maxValue={maxValue} 
+                    />
+                ))}
             </div>
         </div>
     );
-}
+};
+
+export default React.memo(BranchList);
