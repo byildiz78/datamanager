@@ -52,20 +52,30 @@ const gradientColors = [
     }
 ];
 
+// Bileşen dışına taşınan yardımcı fonksiyonlar
+const formatCurrency = (value: string | null | undefined) => {
+    if (value === null || value === undefined) return '0 ₺';
+    const numValue = Number(value) || 0;
+    return new Intl.NumberFormat('tr-TR', {
+        style: 'currency',
+        currency: 'TRY',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(numValue);
+};
+
+const getTrendIcon = (difference: string) => {
+    const numDifference = Number(difference) || 0;
+    return numDifference >= 0 ? (
+        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 dark:text-green-400" />
+    ) : (
+        <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 dark:text-red-400" />
+    );
+};
+
 const BranchCard = memo(function BranchCard({ data, index, maxValue }: BranchCardProps) {
     const colorSet = useMemo(() => gradientColors[index % gradientColors.length], [index]);
     const { addTab, tabs, setActiveTab } = useTabStore();
-
-    const formatCurrency = useCallback((value: string | null | undefined) => {
-        if (value === null || value === undefined) return '0 ₺';
-        const numValue = Number(value) || 0;
-        return new Intl.NumberFormat('tr-TR', {
-            style: 'currency',
-            currency: 'TRY',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(numValue);
-    }, []);
 
     const currentValueNum = useMemo(() => Number(data.currentValue) || 0, [data.currentValue]);
     const barHeight = useMemo(() => 
@@ -73,77 +83,45 @@ const BranchCard = memo(function BranchCard({ data, index, maxValue }: BranchCar
         [currentValueNum, maxValue]
     );
 
-    const getTrendIcon = useCallback((difference: string) => {
-        const numDifference = Number(difference) || 0;
-        return numDifference >= 0 ? (
-            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 dark:text-green-400" />
-        ) : (
-            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 dark:text-red-400" />
-        );
-    }, []);
-
     const handleClick = useCallback(() => {
         const tabId = `branch-${data.id}`;
-        const existingTab = tabs.find(tab => tab.id === tabId);
-        
-        if (existingTab) {
+        if (tabs.some(tab => tab.id === tabId)) {
             setActiveTab(tabId);
             return;
         }
+
+        const branchData = {
+            id: data.id,
+            name: data.name,
+            stats: {
+                checkCount: Math.floor(Math.random() * 1000),
+                checkAverage: Math.floor(Math.random() * 500) + 100,
+                discount: Math.floor(Math.random() * 1000),
+                peopleCount: Number(data.peopleCount),
+                peopleAverage: Math.floor(Math.random() * 50) + 10,
+                canceled: Math.floor(Math.random() * 20)
+            },
+            revenue: {
+                openChecks: Math.floor(Math.random() * 50000),
+                closedChecks: Math.floor(Math.random() * 100000),
+                total: Number(data.currentValue) || 0
+            },
+            orders: Array.from({ length: 10 }, (_, index) => ({
+                id: `order-${index}`,
+                checkNumber: `#${Math.floor(Math.random() * 10000)}`,
+                openDate: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+                staffName: `Personel ${index + 1}`,
+                amount: Math.floor(Math.random() * 1000) + 100,
+                type: ['table', 'package', 'takeaway'][Math.floor(Math.random() * 3)] as 'table' | 'package' | 'takeaway'
+            }))
+        };
 
         addTab({
             id: tabId,
             title: `${data.name} Detay`,
             lazyComponent: () => import("@/app/[tenantId]/(main)/branchdetails/[branchId]/DetailsBranch").then(
                 (mod) => ({
-                    default: () => {
-                        const branchData = {
-                            id: data.id,
-                            name: data.name,
-                            stats: {
-                                checkCount: Math.floor(Math.random() * 1000),
-                                checkAverage: Math.floor(Math.random() * 500) + 100,
-                                discount: Math.floor(Math.random() * 1000),
-                                peopleCount: Number(data.peopleCount),
-                                peopleAverage: Math.floor(Math.random() * 50) + 10,
-                                canceled: Math.floor(Math.random() * 20)
-                            },
-                            revenue: {
-                                openChecks: Math.floor(Math.random() * 50000),
-                                closedChecks: Math.floor(Math.random() * 100000),
-                                total: Number(data.currentValue) || 0
-                            },
-                            orders: Array.from({ length: 10 }, (_, index) => ({
-                                id: `order-${index}`,
-                                checkNumber: `#${Math.floor(Math.random() * 10000)}`,
-                                openDate: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-                                staffName: `Personel ${index + 1}`,
-                                amount: Math.floor(Math.random() * 1000) + 100,
-                                type: ['table', 'package', 'takeaway'][Math.floor(Math.random() * 3)] as 'table' | 'package' | 'takeaway'
-                            }))
-                        };
-
-                        const allBranches = Array.from({ length: 5 }, (_, index) => ({
-                            id: (index + 345).toString(),
-                            name: `Şube ${index + 345}`,
-                            stats: {
-                                checkCount: Math.floor(Math.random() * 1000),
-                                checkAverage: Math.floor(Math.random() * 500) + 100,
-                                discount: Math.floor(Math.random() * 1000),
-                                peopleCount: Math.floor(Math.random() * 500),
-                                peopleAverage: Math.floor(Math.random() * 50) + 10,
-                                canceled: Math.floor(Math.random() * 20)
-                            },
-                            revenue: {
-                                openChecks: Math.floor(Math.random() * 50000),
-                                closedChecks: Math.floor(Math.random() * 100000),
-                                total: Math.floor(Math.random() * 150000)
-                            },
-                            orders: []
-                        }));
-
-                        return <mod.default branchData={branchData} allBranches={allBranches} />;
-                    }
+                    default: () => <mod.default branchData={branchData} allBranches={[]} />
                 })
             )
         });
@@ -152,13 +130,18 @@ const BranchCard = memo(function BranchCard({ data, index, maxValue }: BranchCar
     return (
         <div onClick={handleClick} className="cursor-pointer">
             <Card className="group hover:shadow-xl transition-all duration-300 bg-card/95 backdrop-blur-sm border-2 border-border/60 rounded-xl shadow-lg hover:border-border/80 h-full relative">
-                <div className={cn(
-                    "absolute bottom-3 right-3 flex items-center gap-1 text-xs font-medium backdrop-blur-sm shadow-md border px-2 py-1 rounded-full",
-                    colorSet.badge
-                )}>
+                <motion.div
+                    className={cn(
+                        "absolute bottom-3 right-3 flex items-center gap-1 text-xs font-medium backdrop-blur-sm shadow-md border px-2 py-1 rounded-full",
+                        colorSet.badge
+                    )}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                >
                     <span>Detaylar</span>
                     <ChevronRight className="h-3 w-3" />
-                </div>
+                </motion.div>
 
                 <div className="p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4 sm:mb-6 gap-3">
@@ -171,11 +154,16 @@ const BranchCard = memo(function BranchCard({ data, index, maxValue }: BranchCar
                         </div>
                     </div>
 
-                    <div className={cn(
-                        "mb-4 sm:mb-6 bg-gradient-to-br p-4 sm:p-6 rounded-xl border-2 shadow-lg backdrop-blur-md relative overflow-hidden",
-                        colorSet.bg,
-                        colorSet.border
-                    )}>
+                    <motion.div
+                        className={cn(
+                            "mb-4 sm:mb-6 bg-gradient-to-br p-4 sm:p-6 rounded-xl border-2 shadow-lg backdrop-blur-md relative overflow-hidden",
+                            colorSet.bg,
+                            colorSet.border
+                        )}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                    >
                         <motion.div
                             className={cn("absolute inset-0", colorSet.shadow)}
                             initial={{ opacity: 0 }}
@@ -224,7 +212,7 @@ const BranchCard = memo(function BranchCard({ data, index, maxValue }: BranchCar
                                 transition={{ duration: 1, delay: 0.5 }}
                             />
                         </motion.div>
-                    </div>
+                    </motion.div>
 
                     <motion.div
                         className="grid grid-cols-2 gap-3 sm:gap-4 text-sm bg-muted/50 p-3 sm:p-4 rounded-xl shadow-inner border border-border/60"
