@@ -7,7 +7,7 @@ import { useDatabase } from '@/hooks/use-database';
 import axios from "@/lib/axios";
 
 
-const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + process.env.NEXT_PUBLIC_SUPERSET_HOST : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
+const SUPERSET_BASE_URL = `${ 'http://' + process.env.NEXT_PUBLIC_SUPERSET_HOST }:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
 const tokenCache: Record<string, TokenCache> = {};
 const TOKEN_EXPIRY_MINUTES = 50;
 
