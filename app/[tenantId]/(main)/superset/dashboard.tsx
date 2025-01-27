@@ -160,6 +160,7 @@ export default function SupersetDashboardComponent({ dashboardId, standalone, ex
         };
     }, [dashboardId, filterParams]);
 
+
     return (
         <div className={`${styles.dashboardContainer} embedded-superset`} style={{ width: '100%', height: '100%', position: 'relative' }}>
             <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }} />
