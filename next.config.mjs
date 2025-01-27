@@ -45,6 +45,14 @@ const nextConfig = {
             },
         ]
     },
+    async rewrites() {
+        return [
+            {
+                source: '/superset/:path*',
+                destination: 'http://34.118.22.138:8088/:path*'
+            }
+        ]
+    },
 };
 
 export default nextConfig;

@@ -9,7 +9,8 @@ import axios from "@/lib/axios";
 
 // const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + process.env.NEXT_PUBLIC_SUPERSET_HOST : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
 // const SUPERSET_BASE_URL2 = `http://${process.env.NEXT_PUBLIC_SUPERSET_HOST}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
-const SUPERSET_BASE_URL = 'http://34.118.22.138:8088';
+// Proxy üzerinden Superset'e erişim
+const SUPERSET_BASE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/superset` : '';
 
 const tokenCache: Record<string, TokenCache> = {};
 const TOKEN_EXPIRY_MINUTES = 50;
