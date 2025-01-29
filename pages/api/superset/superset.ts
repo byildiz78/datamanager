@@ -29,7 +29,7 @@ export class Superset {
     private readonly DATABASE_CACHE = new Map<string, CacheEntry<SuperSetDatabaseResponse>>();
     private readonly GUEST_TOKEN_CACHE = new Map<string, { token: string; expiresAt: number }>();
     private constructor() {
-        this.baseUrl = `http://${process.env.NEXT_PUBLIC_SUPERSET_HOST}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
+        this.baseUrl = `https://${process.env.NEXT_PUBLIC_SUPERSET_HOST}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
         this.username = process.env.SUPERSET_USERNAME || '';
         this.password = process.env.SUPERSET_PASSWORD || '';
         this.provider = process.env.SUPERSET_PROVIDER || '';
