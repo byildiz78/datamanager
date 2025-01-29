@@ -8,7 +8,7 @@ import axios from "@/lib/axios";
 
 //https http://34.118.22.138:8088/
 //const SUPERSET_BASE_URL = `${typeof window !== 'undefined' ? window.location.protocol + '//' + process.env.NEXT_PUBLIC_SUPERSET_HOST : ''}:${process.env.NEXT_PUBLIC_SUPERSET_PORT}`;
-const SUPERSET_BASE_URL = 'https://34.118.22.138:8088';
+const SUPERSET_BASE_URL = 'https://dm01.robotpos.com:8088/';
 
 const tokenCache: Record<string, TokenCache> = {};
 const TOKEN_EXPIRY_MINUTES = 50;
