@@ -474,6 +474,11 @@
   resolved "https://registry.npmjs.org/@js-joda/core/-/core-5.6.3.tgz"
   integrity sha512-T1rRxzdqkEXcou0ZprN1q9yDRlvzCPLqmlNt5IIsGBzoEVgLCCYrKEwc84+TvsXuAc95VAZwtWD2zVsKPY4bcA==
 
+"@kurkle/color@^0.3.0":
+  version "0.3.4"
+  resolved "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz"
+  integrity sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==
+
 "@lezer/common@^1.0.0", "@lezer/common@^1.1.0", "@lezer/common@^1.2.0":
   version "1.2.3"
   resolved "https://registry.npmjs.org/@lezer/common/-/common-1.2.3.tgz"
@@ -2155,6 +2160,18 @@ character-reference-invalid@^2.0.0:
   version "2.0.1"
   resolved "https://registry.npmjs.org/character-reference-invalid/-/character-reference-invalid-2.0.1.tgz"
   integrity sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw==
+
+chart.js@^4.1.1, chart.js@^4.4.7, chart.js@>=3.0.0:
+  version "4.4.7"
+  resolved "https://registry.npmjs.org/chart.js/-/chart.js-4.4.7.tgz"
+  integrity sha512-pwkcKfdzTMAU/+jNosKhNL2bHtJc/sSmYgVbuGTEDhzkrhmyihmP7vUc/5ZK9WopidMDHNe3Wm7jOd/WhuHWuw==
+  dependencies:
+    "@kurkle/color" "^0.3.0"
+
+chartjs-plugin-datalabels@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/chartjs-plugin-datalabels/-/chartjs-plugin-datalabels-2.2.0.tgz"
+  integrity sha512-14ZU30lH7n89oq+A4bWaJPnAG8a7ZTk7dKf48YAzMvJjQtjrgg5Dpk9f+LbjCF6bpx3RAGTeL13IXpKQYyRvlw==
 
 chokidar@^3.6.0:
   version "3.6.0"
@@ -5620,6 +5637,11 @@ react-accordion@^0.3.0:
   version "0.3.0"
   resolved "https://registry.npmjs.org/react-accordion/-/react-accordion-0.3.0.tgz"
   integrity sha512-g3F52dKXiysPQrculK0fWs3pCDCqolVVIRuVWOwmeJoXK+D7oD445Qok7oacFqyU13LAIg0X2cL97GUUVNKjcw==
+
+react-chartjs-2@^5.3.0:
+  version "5.3.0"
+  resolved "https://registry.npmjs.org/react-chartjs-2/-/react-chartjs-2-5.3.0.tgz"
+  integrity sha512-UfZZFnDsERI3c3CZGxzvNJd02SHjaSJ8kgW1djn65H1KK8rehwTjyrRKOG3VTMG8wtHZ5rgAO5oTHtHi9GCCmw==
 
 react-country-flag@^3.1.0:
   version "3.1.0"

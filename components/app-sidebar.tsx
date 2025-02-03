@@ -10,6 +10,8 @@ import { RawReportData } from "@/types/tables";
 import { SupersetDashboard } from "@/types/tables";
 import SupersetDashboardComponent from "@/app/[tenantId]/(main)/superset/dashboard";
 import axios, {isAxiosError} from "@/lib/axios";
+import { Link } from "next/link";
+import { XCircle, Receipt } from "lucide-react";
 
 import { getLucideIcon } from "@/lib/utils";
 import { ReportPage } from "@/app/[tenantId]/(main)/reports/page";
@@ -128,7 +130,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: LucideIcons.LayoutDashboard,
             isActive: true,
             expanded: true,
-            items: getSupersetNavItems(supersetMenuItems),
+            items: [
+                {
+                    title: "Cirolar Özel",
+                    url: "data-analysis",
+                    icon: LucideIcons.BarChart3
+                },
+                {
+                    title: "Ürün Bazlı Satışlar",
+                    url: "product-sales",
+                    icon: LucideIcons.BarChart
+                },
+                {
+                    title: "Günlük-Haftalık-Aylık Satış",
+                    url: "sales-analysis",
+                    icon: LucideIcons.LineChart
+                },
+                {
+                    title: "Kazanç Özetleri",
+                    url: "payment-analysis",
+                    icon: LucideIcons.Cash
+                },
+                {
+                    title: "İptal İşlemleri",
+                    url: "cancellation-analysis",
+                    icon: XCircle
+                },
+                ...getSupersetNavItems(supersetMenuItems)
+            ],
         },
         {
             title: "AI (Yapay Zeka)",
