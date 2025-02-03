@@ -30,6 +30,7 @@ export default async function handler(
             WHERE IsActive = 1 
             AND ReportID NOT IN (522) 
             AND BranchDetail = '0'
+            AND ReportType IS NULL
             ORDER BY ReportIndex ASC
         `;
         const instance = Dataset.getInstance();

@@ -1,7 +1,11 @@
 import { Card } from "@/components/ui/card"
-import { BranchData } from "../data-analysis-types"
 import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+interface BranchData {
+  reportValue1: string;
+  reportValue2: number;
+}
 
 interface TopBranchesChartProps {
   data: BranchData[]
@@ -10,7 +14,7 @@ interface TopBranchesChartProps {
 }
 
 export function TopBranchesChart({ data, title, type }: TopBranchesChartProps) {
-  const maxValue = Math.max(...data.map(d => d.amount))
+  const maxValue = Math.max(...data.map(d => d.reportValue2))
   const colors = [
     "bg-blue-500",
     "bg-indigo-500",
@@ -47,16 +51,16 @@ export function TopBranchesChart({ data, title, type }: TopBranchesChartProps) {
 
         <div className="space-y-5">
           {data.map((branch, index) => (
-            <div key={branch.name} className="space-y-2">
+            <div key={branch.reportValue1} className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">{branch.name}</span>
-                <span className="text-muted-foreground font-medium">{branch.amount.toLocaleString('tr-TR')}</span>
+                <span className="font-medium">{branch.reportValue1}</span>
+                <span className="text-muted-foreground font-medium">{branch.reportValue2.toLocaleString('tr-TR')}</span>
               </div>
               <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
                 <div
                   className={`h-full ${colors[index % colors.length]} rounded-full transition-all duration-500 ease-out`}
                   style={{ 
-                    width: `${(branch.amount / maxValue) * 100}%`,
+                    width: `${(branch.reportValue2 / maxValue) * 100}%`,
                     boxShadow: "0 1px 2px rgba(0,0,0,0.1) inset"
                   }}
                 />
