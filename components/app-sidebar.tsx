@@ -9,10 +9,7 @@ import { NavUser } from "@/components/nav-user";
 import { RawReportData } from "@/types/tables";
 import { SupersetDashboard } from "@/types/tables";
 import SupersetDashboardComponent from "@/app/[tenantId]/(main)/superset/dashboard";
-import axios, {isAxiosError} from "@/lib/axios";
-import { Link } from "next/link";
-import { XCircle, Receipt } from "lucide-react";
-
+import axios from "@/lib/axios";
 import { getLucideIcon } from "@/lib/utils";
 import { ReportPage } from "@/app/[tenantId]/(main)/reports/page";
 import { usePathname } from "next/navigation";
@@ -132,7 +129,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             expanded: true,
             items: [
                 {
-                    title: "Cirolar Özel",
+                    title: "Cirolar Özet",
                     url: "data-analysis",
                     icon: LucideIcons.BarChart3
                 },
@@ -149,14 +146,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {
                     title: "Kazanç Özetleri",
                     url: "payment-analysis",
-                    icon: LucideIcons.Cash
+                    icon: LucideIcons.Coins
                 },
                 {
                     title: "İptal İşlemleri",
                     url: "cancellation-analysis",
-                    icon: XCircle
+                    icon: LucideIcons.XCircle
                 },
-                ...getSupersetNavItems(supersetMenuItems)
+                ...(process.env.NEXT_PUBLIC_SUPERSET_ISACTIVE === 'true' ? getSupersetNavItems(supersetMenuItems) : [])
             ],
         },
         {

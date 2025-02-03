@@ -1,89 +1,126 @@
 import { StatsCard } from "./StatsCard"
 import { TopBranchesChart } from "./TopBranchesChart"
-import { BranchTable } from "./BranchTable"
 import { Star, Users, Building2 } from "lucide-react"
+import { BranchData } from "../data-analysis-types"
 
-const mockTopBranches = [
-  { name: "Adana", amount: 66600 },
-  { name: "54 NOLU ŞUBE", amount: 54100 },
-  { name: "Yozgat", amount: 53800 },
-  { name: "Bingöl", amount: 53800 },
-  { name: "248 NOLU ŞUBE", amount: 49200 },
-  { name: "Elazığ", amount: 48800 },
-  { name: "Mardin", amount: 44300 },
-  { name: "Adıyaman", amount: 36100 },
-  { name: "47 NOLU ŞUBE", amount: 30000 },
-  { name: "Muş", amount: 29900 },
-]
+interface SummaryViewProps {
+  widgets: Array<{
+    ReportID: number;
+    ReportName: string;
+  }>;
+  widgetData: Record<number, any>;
+  isLoading: Record<number, boolean>;
+  isUpdating: Record<number, boolean>;
+}
 
-const mockTableData = [
-  { name: "Adana", amount: 79561 },
-  { name: "248 NOLU ŞUBE", amount: 59173 },
-  { name: "Bingöl", amount: 55828 },
-  { name: "54 NOLU ŞUBE", amount: 54072 },
-  { name: "Yozgat", amount: 53838 },
-  { name: "Elazığ", amount: 52046 },
-  { name: "Mardin", amount: 45176 },
-  { name: "Adıyaman", amount: 36108 },
-  { name: "47 NOLU ŞUBE", amount: 32778 },
-]
+const formatNumber = (value: number): string => {
+  return new Intl.NumberFormat('tr-TR').format(value);
+}
 
-export function SummaryView() {
+export function SummaryView({ widgets, widgetData, isLoading, isUpdating }: SummaryViewProps) {
+  // Widget verilerini ID'ye göre objeye dönüştür
+  const widgetsById = widgets.reduce((acc, widget) => {
+    acc[widget.ReportID] = widget;
+    return acc;
+  }, {} as Record<number, typeof widgets[0]>);
+
+  // TopBranchesChart için veriyi dönüştür
+  const transformTopBranchesData = (reportId: number): BranchData[] => {
+    const data = widgetData[reportId];
+    // Eğer data yoksa veya array değilse ve tek bir obje ise, onu array'e çevir
+    const dataArray = Array.isArray(data) ? data : [data];
+    // Her bir öğeyi dönüştür
+    const result = dataArray.map(item => {
+      if (!item) return null;
+      return {
+        reportValue1: String(item.reportValue1 || ''),
+        reportValue2: Number(item.reportValue2 || 0)
+      };
+    }).filter(Boolean) as BranchData[];
+
+    return result;
+  };
+
+  // Widget değerini al (tek değer için)
+  const getWidgetValue = (reportId: number): string => {
+    const data = widgetData[reportId];
+    
+    if (!data) return "0";
+
+    // Array kontrolü
+    if (Array.isArray(data)) {
+      const firstItem = data[0];
+      return firstItem?.reportValue2 
+        ? formatNumber(Number(firstItem.reportValue2))
+        : firstItem?.reportValue1 
+          ? formatNumber(Number(firstItem.reportValue1))
+          : "0";
+    }
+    
+    // Tekil obje kontrolü
+    return data.reportValue2 
+      ? formatNumber(Number(data.reportValue2))
+      : data.reportValue1 
+        ? formatNumber(Number(data.reportValue1))
+        : "0";
+  };
+
+  // TopBranchesChart render kontrolü
+  const renderTopBranchesChart = () => {
+    const reportId = 535;
+    if (!widgetsById[reportId] || !widgetData[reportId]) {
+      return null;
+    }
+
+    const chartData = transformTopBranchesData(reportId);
+    return (
+      <TopBranchesChart
+        data={chartData}
+        title={widgetsById[reportId].ReportName}
+        type="Toplam Ciro"
+      />
+    );
+  };
+
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-7 space-y-6">
-        <TopBranchesChart
-          data={mockTopBranches}
-          title="İlk 10 Şube"
-          type="SUM(Tutar), MASA SERVİS"
-        />
-        <BranchTable data={mockTableData} />
+        {renderTopBranchesChart()}
       </div>
 
       <div className="col-span-5 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <StatsCard
-            title="Toplam Ciro"
-            value="1,615,101"
-            subtitle="Toplam Ciro"
-            icon={<Star className="w-4 h-4 text-yellow-400" />}
-            color="blue"
-          />
-          <StatsCard
-            title="Toplam indirim"
-            value="23,728"
-            subtitle="Toplam indirim"
-            icon={<Star className="w-4 h-4 text-yellow-400" />}
-            color="purple"
-          />
-          <StatsCard
-            title="Adisyon sayısı"
-            value="9,708"
-            subtitle="Adet Adisyon"
-            icon={<Star className="w-4 h-4 text-yellow-400" />}
-            color="pink"
-          />
-          <StatsCard
-            title="Kişi Ortalama"
-            value="2"
-            subtitle="Kişi Başı Ortalama Harcama"
-            icon={<Star className="w-4 h-4 text-yellow-400" />}
-            color="orange"
-          />
-          <StatsCard
-            title="Konuk Sayısı"
-            value="1,014,016"
-            subtitle="Kişi"
-            icon={<Users className="w-4 h-4 text-yellow-400" />}
-            color="green"
-          />
-          <StatsCard
-            title="Aktif şube sayısı"
-            value="98"
-            subtitle="Aktif Şube Sayısı"
-            icon={<Building2 className="w-4 h-4 text-yellow-400" />}
-            color="indigo"
-          />
+          {[536, 551, 537, 538, 539, 540].map(reportId => (
+            widgetsById[reportId] && widgetData[reportId] && (
+              <StatsCard
+                key={reportId}
+                title={widgetsById[reportId].ReportName.trim()}
+                value={getWidgetValue(reportId)}
+                subtitle={
+                  reportId === 536 ? "Toplam Ciro" :
+                  reportId === 551 ? "Toplam indirim" :
+                  reportId === 537 ? "Adet Adisyon" :
+                  reportId === 538 ? "Kişi Başı Ortalama Harcama" :
+                  reportId === 539 ? "Kişi" :
+                  reportId === 540 ? "Aktif Şube Sayısı" :
+                  widgetsById[reportId].ReportName.trim()
+                }
+                icon={
+                  reportId === 539 ? <Users className="w-4 h-4 text-yellow-400" /> :
+                  reportId === 540 ? <Building2 className="w-4 h-4 text-yellow-400" /> :
+                  <Star className="w-4 h-4 text-yellow-400" />
+                }
+                color={
+                  reportId === 536 ? "blue" :
+                  reportId === 551 ? "purple" :
+                  reportId === 537 ? "pink" :
+                  reportId === 538 ? "orange" :
+                  reportId === 539 ? "green" :
+                  "indigo"
+                }
+              />
+            )
+          ))}
         </div>
       </div>
     </div>

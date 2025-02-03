@@ -24,8 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const referer = req.headers.referer;
         const tenantId = referer ? new URL(referer).pathname.split('/')[1] : '';
 
-        console.log(widgetData);
-
         if (!widgetData.ReportID || !widgetData.ReportName) {
             return res.status(400).json({
                 success: false,

@@ -1,6 +1,6 @@
 export interface BranchData {
-  name: string
-  amount: number
+  reportValue1: string;
+  reportValue2: number;
 }
 
 export interface DataAnalysisStats {
