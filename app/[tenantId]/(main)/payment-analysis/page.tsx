@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,31 +21,187 @@ import {
 } from "@/components/ui/select";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { Star, Search, DollarSign, ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Star, Search, DollarSign, ArrowUpDown, ChevronLeft, ChevronRight, Building2, CreditCard } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useState, useRef } from "react";
+import axios from "@/lib/axios";
+import { WebWidget } from "@/types/tables";
+import { useTabStore } from "@/stores/tab-store";
+import { useFilterStore } from "@/stores/filters-store";
+import { useFilterEventStore } from "@/stores/filter-event-store";
+import { useRefreshStore } from "@/stores/refresh-store";
+import { DataLoader } from "../data-analysis/components/DataLoader";
+import { StatsCard } from "../data-analysis/components/StatsCard";
+import { DataTable } from '@/components/common';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const mockData = {
-  payments: [
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'VISA', amount: 38390, percentage: 50 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'YEMEKSEPETI ONLINE', amount: 9038, percentage: 12 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'NAKIT', amount: 7320, percentage: 9 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'TRENDYOL', amount: 7287, percentage: 9 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'SODEXO', amount: 3600, percentage: 5 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'GETIR', amount: 3380, percentage: 4 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'TICKET', amount: 2610, percentage: 3 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'MULTINET', amount: 2340, percentage: 3 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'SETCARD', amount: 1915, percentage: 2 },
-    { branchName: 'BRANDIUM AYYP', paymentMethod: 'METROPOL', amount: 1480, percentage: 2 },
-  ]
-};
+interface PaymentData {
+  SUBE: string;
+  "ÖDEME TİPİ": string;
+  GenelTOPLAM: number;
+}
 
-const pieData = {
-  labels: mockData.payments.map(p => p.paymentMethod),
-  datasets: [
-    {
-      data: mockData.payments.map(p => p.amount),
+interface ChartData {
+  reportValue1: string;
+  reportValue2: number;
+}
+
+export default function PaymentAnalysis() {
+  const [widgets, setWidgets] = useState<WebWidget[]>([]);
+  const { activeTab } = useTabStore();
+  const { selectedFilter } = useFilterStore();
+  const [widgetData, setWidgetData] = useState<Record<number, any>>({});
+  const [isLoading, setIsLoading] = useState<Record<number, boolean>>({});
+  const [isUpdating, setIsUpdating] = useState<Record<number, boolean>>({});
+  const [hasFetched, setHasFetched] = useState(false);
+  const { filterApplied, setFilterApplied } = useFilterEventStore();
+  const { shouldFetch, setShouldFetch } = useRefreshStore();
+  const [isDataAnalysisTab, setIsDataAnalysisTab] = useState(false);
+  const prevFilterRef = useRef(selectedFilter);
+  const [isLoadingWidgets, setIsLoadingWidgets] = useState(true);
+  const [hasFirstWidgetData, setHasFirstWidgetData] = useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [paymentData, setPaymentData] = useState<PaymentData[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+
+  const fetchWidgetData = useCallback(async (reportId: number, isInitial = false) => {
+    if (!isDataAnalysisTab) return;
+
+    const branches = selectedFilter.selectedBranches.length > 0
+      ? selectedFilter.selectedBranches
+      : selectedFilter.branches;
+
+    if (!branches || branches.length === 0) return;
+
+    try {
+      if (isInitial) {
+        setIsLoading(prev => ({ ...prev, [reportId]: true }));
+      } else {
+        setIsUpdating(prev => ({ ...prev, [reportId]: true }));
+      }
+
+      const response = await axios.post("/api/widgetreport", {
+        date1: selectedFilter.date.from,
+        date2: selectedFilter.date.to,
+        branches: branches.map((item) => item.BranchID),
+        reportId: [reportId]
+      });
+
+      if (response.status === 200) {
+        if (reportId === 555) {
+          setPaymentData(response.data);
+        } else if (reportId === 558) {
+          setChartData(response.data);
+        }
+
+        setWidgetData(prev => ({
+          ...prev,
+          [reportId]: Array.isArray(response.data) ? response.data : [response.data]
+        }));
+        setHasFetched(true);
+
+        if (!hasFirstWidgetData && response.data) {
+          setHasFirstWidgetData(true);
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching data for widget ${reportId}:`, error);
+    } finally {
+      if (isInitial) {
+        setIsLoading(prev => ({ ...prev, [reportId]: false }));
+      } else {
+        setIsUpdating(prev => ({ ...prev, [reportId]: false }));
+      }
+    }
+  }, [isDataAnalysisTab, selectedFilter.date, selectedFilter.branches, selectedFilter.selectedBranches, hasFirstWidgetData]);
+
+  // Widget listesini çek
+  useEffect(() => {
+    const fetchWidgets = async () => {
+      try {
+        setIsLoadingWidgets(true);
+        const response = await axios.get<WebWidget[]>("/api/dashboard/payment-analysis/payment-widgets", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        setWidgets(response.data);
+      } catch (error) {
+        console.error("Error fetching widgets:", error);
+      } finally {
+        setIsLoadingWidgets(false);
+      }
+    };
+    fetchWidgets();
+  }, []);
+
+  // Tab değişimini takip et
+  useEffect(() => {
+    const isDataAnalysis = activeTab === "Kazanç Özetleri";
+    setIsDataAnalysisTab(isDataAnalysis);
+  }, [activeTab]);
+
+  // Widget verilerini çek
+  useEffect(() => {
+    if (!isDataAnalysisTab || !widgets.length || document.hidden) return;
+
+    const branches = selectedFilter.selectedBranches.length > 0
+      ? selectedFilter.selectedBranches
+      : selectedFilter.branches;
+
+    if (!branches || branches.length === 0) return;
+
+    if (!hasFetched) {
+      widgets.forEach(widget => {
+        fetchWidgetData(widget.ReportID, true);
+      });
+      return;
+    }
+
+    if (shouldFetch || filterApplied) {
+      widgets.forEach(widget => {
+        fetchWidgetData(widget.ReportID, false);
+      });
+
+      if (filterApplied) {
+        setFilterApplied(false);
+      }
+      if (shouldFetch) {
+        setShouldFetch(false);
+      }
+    }
+  }, [
+    isDataAnalysisTab,
+    widgets,
+    hasFetched,
+    shouldFetch,
+    filterApplied,
+    fetchWidgetData,
+    setFilterApplied,
+    setShouldFetch,
+  ]);
+
+  // Filtre değişimini takip et
+  useEffect(() => {
+    const filterChanged =
+      prevFilterRef.current.date.from !== selectedFilter.date.from ||
+      prevFilterRef.current.date.to !== selectedFilter.date.to ||
+      prevFilterRef.current.branches !== selectedFilter.branches ||
+      prevFilterRef.current.selectedBranches !== selectedFilter.selectedBranches;
+
+    if (isDataAnalysisTab && hasFetched && filterChanged) {
+      setFilterApplied(true);
+    }
+
+    prevFilterRef.current = selectedFilter;
+  }, [isDataAnalysisTab, hasFetched, selectedFilter, setFilterApplied]);
+
+  // Pie chart data hazırla
+  const pieData = {
+    labels: chartData.map(item => item.reportValue1),
+    datasets: [{
+      data: chartData.map(item => item.reportValue2),
       backgroundColor: [
         'rgb(66, 133, 244)',   // VISA
         'rgb(52, 168, 83)',    // YEMEKSEPETI
@@ -59,294 +215,178 @@ const pieData = {
         'rgb(158, 158, 158)',  // METROPOL
       ],
       borderWidth: 1,
-    },
-  ],
-};
+    }],
+  };
 
-const pieOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'right' as const,
-      labels: {
-        padding: 20,
-        font: { size: 12 },
-        usePointStyle: true,
-        boxWidth: 6
-      }
-    },
-    tooltip: {
-      callbacks: {
-        label: function(context: any) {
-          const value = context.raw;
-          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-          const percentage = ((value / total) * 100).toFixed(1);
-          return `${context.label}: ${value.toLocaleString('tr-TR')} (${percentage}%)`;
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: {
+          padding: 20,
+          font: { size: 12 },
+          usePointStyle: true,
+          boxWidth: 6
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            const value = context.raw;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${context.label}: ${value.toLocaleString('tr-TR')} (${percentage}%)`;
+          }
         }
       }
     }
-  }
-};
-
-const gradients = {
-  blue: "from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20",
-  purple: "from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20",
-  pink: "from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20",
-  orange: "from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20",
-  green: "from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
-  indigo: "from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20",
-}
-
-const textGradients = {
-  blue: "from-blue-600 to-sky-600",
-  purple: "from-purple-600 to-fuchsia-600",
-  pink: "from-pink-600 to-rose-600",
-  orange: "from-orange-600 to-amber-600",
-  green: "from-emerald-600 to-teal-600",
-  indigo: "from-indigo-600 to-violet-600",
-}
-
-function StatsCard({ title, value, subtitle, icon, color = "blue" }) {
-  return (
-    <Card className={`bg-gradient-to-br ${gradients[color]} hover:shadow-lg transition-all duration-200`}>
-      <div className="p-4">
-        <div className="flex justify-between items-start">
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              {icon}
-              <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-            </div>
-            <div className="space-y-0.5">
-              <p className={`text-2xl font-semibold tracking-tight bg-gradient-to-r ${textGradients[color]} bg-clip-text text-transparent`}>
-                {value}
-              </p>
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function DataTable({ data, searchTerm }) {
-  const [sortConfig, setSortConfig] = React.useState({ key: null, direction: 'asc' });
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
-
-  const sortData = (items) => {
-    if (!sortConfig.key) return items;
-
-    return [...items].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
   };
 
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+  const columns = [
+    {
+      key: 'SUBE' as keyof PaymentData,
+      title: 'Şube',
+      width: '200px',
+      fixed: 'left' as const,
+      sortable: true,
+      searchable: true,
+      render: (item: PaymentData) => (
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500/5 via-primary/5 to-blue-500/5 flex items-center justify-center ring-1 ring-border/50">
+              <Building2 className="w-4 h-4 text-primary/40" />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium">{item.SUBE}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'ÖDEME TİPİ' as keyof PaymentData,
+      title: 'Ödeme Tipi',
+      width: '250px',
+      sortable: true,
+      searchable: true,
+      render: (item: PaymentData) => (
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-violet-500" />
+          <span>{item["ÖDEME TİPİ"]}</span>
+        </div>
+      )
+    },
+    {
+      key: 'GenelTOPLAM' as keyof PaymentData,
+      title: 'Tutar',
+      width: '150px',
+      sortable: true,
+      searchable: true,
+      render: (item: PaymentData) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-600 ring-1 ring-red-500/20">
+          {item.GenelTOPLAM.toLocaleString('tr-TR')} ₺
+        </span>
+      )
     }
-    setSortConfig({ key, direction });
-  };
+  ];
 
-  const filteredData = data.filter(item =>
-    Object.values(item).some(value =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  const sortedData = sortData(filteredData);
-  const totalPages = Math.ceil(sortedData.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedData = sortedData.slice(startIndex, startIndex + pageSize);
-
-  const SortButton = ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() => requestSort(column)}
-      className="h-8 px-2 hover:bg-muted"
-    >
-      <ArrowUpDown className="h-4 w-4" />
-    </Button>
-  );
+  const filters = [
+    {
+      key: 'SUBE' as keyof PaymentData,
+      title: 'Şube',
+      options: Array.from(new Set(paymentData?.map(item => item.SUBE) ?? [])).map(sube => ({
+        label: sube,
+        value: sube
+      }))
+    },
+    {
+      key: 'ÖDEME TİPİ' as keyof PaymentData,
+      title: 'Ödeme Tipi',
+      options: Array.from(new Set(paymentData?.map(item => item["ÖDEME TİPİ"]) ?? [])).map(tip => ({
+        label: tip,
+        value: tip
+      }))
+    }
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[250px]">
-                <div className="flex items-center justify-between">
-                  BranchName
-                  <SortButton column="branchName" />
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center justify-between">
-                  PaymentMethodName
-                  <SortButton column="paymentMethod" />
-                </div>
-              </TableHead>
-              <TableHead className="text-right">
-                <div className="flex items-center justify-end">
-                  SUM(Tutar)
-                  <SortButton column="amount" />
-                </div>
-              </TableHead>
-              <TableHead className="text-right w-[150px]">
-                <div className="flex items-center justify-end">
-                  %SUM(AmountPaid)
-                  <SortButton column="percentage" />
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedData.map((payment, index) => (
-              <TableRow key={index} className="hover:bg-muted/50 transition-colors">
-                <TableCell className="font-medium">{payment.branchName}</TableCell>
-                <TableCell>{payment.paymentMethod}</TableCell>
-                <TableCell className="text-right">{payment.amount.toLocaleString('tr-TR')}</TableCell>
-                <TableCell className="text-right font-medium">{payment.percentage}%</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm text-muted-foreground">
-            Sayfa {currentPage} / {totalPages}
-          </p>
-          <Select
-            value={pageSize.toString()}
-            onValueChange={(value) => {
-              setPageSize(Number(value));
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm text-muted-foreground">satır</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function PaymentAnalysis() {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const totalAmount = mockData.payments.reduce((sum, p) => sum + p.amount, 0);
-  const cashPayments = mockData.payments
-    .filter(p => ['NAKIT'].includes(p.paymentMethod))
-    .reduce((sum, p) => sum + p.amount, 0);
-  const cashPercentage = ((cashPayments / totalAmount) * 100).toFixed(1);
-
-  return (
-    <ScrollArea className="h-[calc(100vh-8rem)]">
+    <ScrollArea className="h-[calc(90vh-8rem)]">
       <div className="space-y-6 p-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - Table */}
-          <div className="col-span-8">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
+        {(isLoadingWidgets || !hasFirstWidgetData) ? (
+          <DataLoader fullscreen={false} />
+        ) : (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - Table */}
+            {widgets.find(widget => widget.ReportID === 555) && (
+              <div className="col-span-7 overflow-x-hidden overflow-y-hidden">
+                <Card>
+                  <CardHeader>
                     <CardTitle>Ödeme İşlemleri</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Ödeme yöntemlerine göre detaylı dağılım
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Ara..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-[200px] pl-8"
+                  </CardHeader>
+                  <CardContent>
+                    <DataTable
+                      data={paymentData ?? []}
+                      columns={columns}
+                      filters={filters}
+                      searchFields={['SUBE', 'ÖDEME TİPİ', 'GenelTOPLAM']}
+                      pageSize={10}
+                      searchPlaceholder="Ödemelerde ara..."
                     />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DataTable data={mockData.payments} searchTerm={searchTerm} />
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-          {/* Right Column - Stats and Chart */}
-          <div className="col-span-4 space-y-4">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <StatsCard
-                title="Toplam Kazanç"
-                value={totalAmount.toLocaleString('tr-TR')}
-                subtitle="Tüm Ödeme Yöntemleri"
-                icon={<Star className="w-4 h-4 text-yellow-400" />}
-                color="blue"
-              />
-              <StatsCard
-                title="Nakit Ödemeler"
-                value={`${cashPayments.toLocaleString('tr-TR')} (${cashPercentage}%)`}
-                subtitle="Toplam Nakit Ödemeler"
-                icon={<DollarSign className="w-4 h-4 text-yellow-400" />}
-                color="green"
-              />
+            {/* Right Column - Stats and Chart */}
+            <div className="col-span-5">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {widgets.find(widget => widget.ReportID === 556) && (
+                  <StatsCard
+                    title={widgets.find(widget => widget.ReportID === 556)?.ReportName || ""}
+                    value={widgetData[556]?.[0]?.reportValue1.toLocaleString('tr-TR') + " ₺"}
+                    subtitle="Tüm Ödeme Yöntemleri"
+                    icon={<Star className="w-4 h-4" />}
+                    color="purple"
+                  />
+                )}
+                {widgets.find(widget => widget.ReportID === 557) && (
+                  <StatsCard
+                    title={widgets.find(widget => widget.ReportID === 557)?.ReportName || ""}
+                    value={widgetData[557]?.[0]?.reportValue1.toLocaleString('tr-TR') + " ₺"}
+                    subtitle="Toplam Nakit Ödemeler"
+                    icon={<DollarSign className="w-4 h-4" />}
+                    color="green"
+                  />
+                )}
+              </div>
+
+              {/* Pie Chart */}
+              {widgets.find(widget => widget.ReportID === 558) && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Ödeme Dağılımı</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px] flex items-center justify-center">
+                      <Pie data={pieData} options={{
+                        ...pieOptions,
+                        plugins: {
+                          ...pieOptions.plugins,
+                          legend: {
+                            ...pieOptions.plugins.legend,
+                            position: 'bottom' as const,
+                          }
+                        }
+                      }} />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-
-            {/* Pie Chart */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Ödeme Dağılımı</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-center justify-center">
-                  <Pie data={pieData} options={pieOptions} />
-                </div>
-              </CardContent>
-            </Card>
           </div>
-        </div>
+        )}
       </div>
     </ScrollArea>
   );
