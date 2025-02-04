@@ -8,7 +8,7 @@ export default function AskDatabasePage() {
     const [iframeUrl, setIframeUrl] = useState("");
 
     useEffect(() => {
-        fetch("/api/ai/ask_database", {
+        fetch("/datamanager/api/ai/ask_database", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

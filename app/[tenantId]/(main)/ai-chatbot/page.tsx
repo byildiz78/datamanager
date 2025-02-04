@@ -80,13 +80,13 @@ const AIChatbotPage = () => {
         setLoadingMessage('Başlatılıyor...');
 
         try {
-            const response = await fetch('/api/ai/chatbot', {
+            const response = await fetch('/datamanager/api/ai/chatbot', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    branches: (selectedFilter.selectedBranches.length ===  selectedFilter.branches.length || selectedFilter.selectedBranches.length ===  0) 
+                    branches: (selectedFilter.selectedBranches.length === selectedFilter.branches.length || selectedFilter.selectedBranches.length ===  0) 
                         ? 'all' 
                         : (selectedFilter.selectedBranches.length > 0 
                         ? selectedFilter.selectedBranches.map(item => item.BranchID) 

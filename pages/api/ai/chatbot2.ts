@@ -2,12 +2,16 @@ import { formatDateTimeYMDHI, formatDateTimeYMDHIS } from '@/lib/utils';
 import { Dataset } from '@/pages/api/dataset';
 import { ChatBot } from '@/types/tables';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { OpenAI } from 'openai';
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions.mjs';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL;
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const client = new OpenAI({
+    apiKey: DEEPSEEK_API_KEY,
+    baseURL: DEEPSEEK_API_URL
+});
 
 type ResponseWithFlush = NextApiResponse & {
     flush?: () => void;
@@ -31,7 +35,6 @@ export default async function handler(
 
         const instance = Dataset.getInstance();
         const query = `SELECT TOP 1 ChatbotRole, ChatbotContent FROM dm_ChatBot WHERE ChatBotID = @ChatBotID`;
-        
         try {
             const config = await instance.executeQuery<ChatBot[]>({
                 query,
@@ -40,6 +43,7 @@ export default async function handler(
                     ChatBotID: ChatBotID.toString()
                 }
             });
+
 
             const chatbotConfig = config[0];
             if (!chatbotConfig) {
@@ -55,97 +59,85 @@ export default async function handler(
                 BranchID: branches
             };
 
-            // Format system message and chat history
-            const systemContent = `${chatbotConfig.ChatbotContent}\n\nSQL Parametreleri: ${JSON.stringify(parameters)}\n\nÖNEMLİ NOT: BranchID parametresi "${parameters.BranchID}" olarak geldi. BranchID "all" olduğunda WHERE koşuluna BranchID eklenmemelidir.`;
+            const messages: ChatCompletionMessageParam[] = [
+                {
+                    role: chatbotConfig.ChatbotRole as 'system' | 'user' | 'assistant',
+                    content: `${chatbotConfig.ChatbotContent}.  SQL Parametreleri: ${JSON.stringify(parameters)}" `
+                }
+            ];
 
-            // Format chat history
-            let formattedHistory = [];
-            
-            if (oldMessages && oldMessages.length > 0) {
-                // Combine system content with first user message
-                formattedHistory = oldMessages.map((msg, i) => ({
-                    role: i % 2 === 0 ? "user" : "model",
-                    parts: [{ 
-                        text: i === 0 ? `${systemContent}\n\nUser Query: ${msg}` : msg 
-                    }]
-                }));
-            } else {
-                // If no history, create initial user message with system content
-                formattedHistory = [{
-                    role: "user",
-                    parts: [{ 
-                        text: `${systemContent}\n\nUser Query: ${message}` 
-                    }]
-                }];
+            let oldmesgs = '';
+            if (oldMessages && Array.isArray(oldMessages)) {
+                // Eski mesajları sırayla ekleyelim
+                for (let i = 0; i < oldMessages.length; i++) {
+                    const role = i % 2 === 0 ? 'user' : 'assistant';
+                    messages.push({
+                        role: role,
+                        content: oldMessages[i]
+                    });
+                }
             }
 
-            // Debug logging
-            console.log('Formatted History:', JSON.stringify(formattedHistory, null, 2));
-
+            // En son gelen mesajı ekleyelim
+            messages.push({
+                role: 'user',
+                content: message
+            })
             try {
-                // Initialize chat with history
-                const chat = model.startChat({
-                    history: formattedHistory
+                const response = await client.chat.completions.create({
+                    model: 'deepseek-chat',
+                    messages,
+                    stream: true
                 });
 
-                // Send progress update for response generation
-                res.write('data: ' + JSON.stringify({ status: 'progress', message: 'Yanıt oluşturuluyor...' }) + '\n\n');
+                console.log('response',response);
+                // Send progress update for SQL generation
+                res.write('data: ' + JSON.stringify({ status: 'progress', message: 'yanıt oluşturuluyor...' }) + '\n\n');
                 res.flush?.();
 
-                // Send message and get streaming response
-                const result = await chat.sendMessageStream(message);
-                
                 let aiResponse = '';
-                for await (const chunk of result.stream) {
-                    const chunkText = chunk.text();
-                    aiResponse += chunkText;
+                for await (const part of response) {
+                    const content = part.choices[0]?.delta?.content || '';
+                    console.log('content',content);
+                    aiResponse += content;
                 }
+                console.log('aiResponse',aiResponse);
+                if(aiResponse.toString().includes('ONLY_SQL')){
+                    aiResponse = aiResponse
+                    .replace('ONLY_SQL', '')
+                    .replace(/```sql/g, '')
+                    .replace(/```/g, '')
+                    .replace(/\\n/g, '\n')
+                    .trim();
 
-                // Handle SQL responses
-                if (aiResponse.trim().includes('ONLY_SQL')) {
-                    const sqlQuery = aiResponse
-                        .replace('ONLY_SQL', '')
-                        .replace(/```sql/g, '')
-                        .replace(/```/g, '')
-                        .replace(/\\n/g, '\n')
-                        .trim();
-
-                    // Debug logging
-                    console.log('Executing SQL Query:', sqlQuery);
-
-                    // Send the complete SQL query as a single chunk
-                    res.write('data: ' + JSON.stringify({ 
-                        status: 'progress', 
-                        content: sqlQuery
-                    }) + '\n\n');
-                    res.flush?.();
-
-                    // Execute SQL query
+                    if (!aiResponse.toString().includes('SELECT')) {
+                        res.write('data: ' + JSON.stringify({ 
+                            status: 'error',
+                            error: aiResponse
+                        }) + '\n\n');
+        
+                        res.flush?.();
+                        res.end();
+        
+                    }
+        
+                    // Send progress update for database query
                     res.write('data: ' + JSON.stringify({ status: 'progress', message: 'Veritabanı sorgusu çalıştırılıyor...' }) + '\n\n');
                     res.flush?.();
-
+        
                     const result = await instance.executeQuery<any[]>({
-                        query: sqlQuery,
+                        query: aiResponse,
                         req
                     });
-
-                    // Send query results
+        
+                    // Send final result
                     res.write('data: ' + JSON.stringify({ status: 'complete', data: result }) + '\n\n');
                     res.flush?.();
-                } else {
-                    // For non-SQL responses, stream each chunk
-                    const chunks = aiResponse.split('\n');
-                    for (const chunk of chunks) {
-                        if (chunk.trim()) {
-                            res.write('data: ' + JSON.stringify({ 
-                                status: 'progress', 
-                                content: chunk + '\n'
-                            }) + '\n\n');
-                            res.flush?.();
-                        }
-                    }
+                }else{
                     res.write('data: ' + JSON.stringify({ status: 'complete', data: aiResponse }) + '\n\n');
+
                 }
+
 
                 res.end();
 
