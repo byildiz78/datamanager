@@ -158,10 +158,6 @@ export default function DataAnalysisPage() {
     prevFilterRef.current = selectedFilter;
   }, [isDataAnalysisTab, hasFetched, selectedFilter, setFilterApplied]);
 
-  // Yükleme durumunu kontrol et
-  const isInitialLoading = !hasFetched && Object.values(isLoading).some(Boolean);
-  const hasAnyData = Object.keys(widgetData).length > 0;
-
   return (
     <ScrollArea className="h-[calc(90vh-8rem)]">
       <div className="space-y-6 p-6">

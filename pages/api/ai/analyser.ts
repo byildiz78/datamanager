@@ -18,14 +18,14 @@ export default async function handler(
     res: NextApiResponse
 ) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ error: 'Bu metod desteklenmiyor' });
     }
 
     try {
         const { ChatBotID, branches, date1, date2 } = req.body;
 
         if (!ChatBotID) {
-            return res.status(400).json({ error: 'ChatBotID is required' });
+            return res.status(400).json({ error: 'ChatBotID gereklidir' });
         }
 
         const instance = Dataset.getInstance();
@@ -41,7 +41,7 @@ export default async function handler(
         const chatbotConfig = config[0];
 
         if (!chatbotConfig) {
-            return res.status(404).json({ error: 'Chatbot configuration not found' });
+            return res.status(404).json({ error: 'Chatbot yapılandırması bulunamadı' });
         }
         const date1Obj = new Date(date1);
         const date2Obj = new Date(date2);
@@ -59,8 +59,8 @@ export default async function handler(
             parameters,
             req
         }).catch(error => {
-            console.error('Query execution error:', error);
-            throw new Error('Failed to execute analysis query');
+            console.error('Sorgu çalıştırma hatası:', error);
+            throw new Error('Analiz sorgusu çalıştırılamadı');
         });
 
         // Set up SSE headers
@@ -99,7 +99,7 @@ export default async function handler(
                     }
                 ];
 
-                // Get streaming response from AI
+               // Get streaming response from AI
                 const response = await client.chat.completions.create({
                     model: 'deepseek-chat',
                     messages: messages,
@@ -126,7 +126,7 @@ export default async function handler(
                         // Ensure the content is sent immediately
                         if (res.flush) res.flush();
                     }
-                }
+                } 
 
                 // After all AI messages, fetch and send balance
                 try {
@@ -146,7 +146,7 @@ export default async function handler(
 
                     if (res.flush) res.flush();
                 } catch (balanceError) {
-                    console.error('Error fetching balance:', balanceError);
+                    console.error('Bakiye bilgisi getirilirken hata oluştu:', balanceError);
                 }
 
             } else {
@@ -156,18 +156,18 @@ export default async function handler(
             }
 
         } catch (error) {
-            console.error('AI processing error:', error);
+            console.error('AI işleme hatası:', error);
             res.write(`data: ${JSON.stringify({
-                content: 'Sorry, there was an error processing your request.'
+                content: 'İsteğiniz işlenirken bir hata oluştu. Lütfen tekrar deneyin.'
             })}\n\n`);
         }
 
         res.end();
     } catch (error) {
-        console.error('Handler error:', error);
+        console.error('Handler hatası:', error);
         if (!res.headersSent) {
             res.status(500).json({
-                error: error instanceof Error ? error.message : 'An unexpected error occurred'
+                error: error instanceof Error ? error.message : 'Beklenmeyen bir hata oluştu'
             });
         }
     }
