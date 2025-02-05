@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCallback, useEffect, useState, useRef } from "react"
@@ -16,18 +16,18 @@ import { DataLoader } from "../data-analysis/components/DataLoader"
 import { Building2, Package, UserCircle, UserX, AlertCircle, Clock } from "lucide-react"
 
 interface CancellationData {
-  Şube: string;
-  "ÇEK NO": number;
-  ÜRÜN: string;
-  ADET: number;
-  TUTAR: number;
-  "İPTAL EDEN KULLANICI": string;
-  SEBEP: string;
-  "EKLEYEN KULLANICI": string;
-  TARİH: string;
-  "SİPARİŞ SAATİ": string;
-  "İPTAL SAATİ": string;
-  Adres: string | null;
+  Şube?: string;
+  "ÇEK NO"?: number;
+  ÜRÜN?: string;
+  ADET?: number;
+  TUTAR?: number;
+  "İPTAL EDEN KULLANICI"?: string;
+  SEBEP?: string;
+  "EKLEYEN KULLANICI"?: string;
+  TARİH?: string;
+  "SİPARİŞ SAATİ"?: string;
+  "İPTAL SAATİ"?: string;
+  Adres?: string | null;
 }
 
 export default function CancellationAnalysis() {
@@ -347,7 +347,7 @@ export default function CancellationAnalysis() {
               {widgets.find(widget => widget.ReportID === 552) && (
                 <StatsCard
                   title="İptal İşlemleri Toplam"
-                  value={widgetData[552]?.[0]?.reportValue1.toLocaleString('tr-TR') + " ₺"}
+                  value={(widgetData[552]?.[0]?.reportValue1 ?? 0).toLocaleString('tr-TR') + " ₺"}
                   subtitle="toplam iptal tutarı"
                   icon={<Star className="w-4 h-4" />}
                   color="red"
